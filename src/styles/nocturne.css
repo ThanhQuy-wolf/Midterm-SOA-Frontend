@@ -1,0 +1,432 @@
+/* Ledger — design-system tokens and component classes (light theme).
+   Source of truth for the system's look: a bank ledger's paper, ink and
+   stamp. Retune it here; see readme.md for the original component-library
+   handoff this file still tracks (class names kept 1:1 for compatibility,
+   only the values and a few additive rules changed for the light retheme). */
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;1,500&family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
+
+:root {
+  /* — ground — */
+  --color-bg: #EEF2E9;      /* pale sage ledger paper — the page ground */
+  --color-surface: #FFFFFF; /* white form-card paper, sits on the ledger ground */
+  --color-surface-soft: #FBFAF3; /* warm ivory — passbook-stub surfaces */
+  --color-text: #202B3B;    /* deep navy-ink — primary text */
+  --color-paper-line: color-mix(in srgb, var(--color-text) 6%, transparent); /* ruled hairline on the page ground */
+
+  /* — ink accents — */
+  --color-accent: #24537D;    /* signature ink — interactive blue */
+  --color-accent-2: #2E6B4E;  /* credit ink — paid / completed / success */
+  --color-stamp: #A6402E;     /* seal ink — the stamp badge, terminal/attention states */
+  --color-divider: color-mix(in srgb, var(--color-text) 18%, transparent);
+
+  /* Tonal ramps — one shared lightness scale so the same step of any role
+     reads at the same visual weight as the others. */
+  --color-neutral-100: #F3F5F1;
+  --color-neutral-200: #E4E8E1;
+  --color-neutral-300: #CDD3CB;
+  --color-neutral-400: #A9B0A8;
+  --color-neutral-500: #848C84;
+  --color-neutral-600: #666E68;
+  --color-neutral-700: #4C534E;
+  --color-neutral-800: #363C38;
+  --color-neutral-900: #232722;
+
+  --color-accent-100: #EAF1F7;
+  --color-accent-200: #CFE0EC;
+  --color-accent-300: #A2C3D9;
+  --color-accent-400: #6D9BBE;
+  --color-accent-500: #3F739E;
+  --color-accent-600: #24537D;
+  --color-accent-700: #1B3E5F;
+  --color-accent-800: #142E46;
+  --color-accent-900: #0D1E2E;
+
+  --color-accent-2-100: #E9F3EC;
+  --color-accent-2-200: #C7E2D0;
+  --color-accent-2-300: #99C7AA;
+  --color-accent-2-400: #67A97F;
+  --color-accent-2-500: #438862;
+  --color-accent-2-600: #2E6B4E;
+  --color-accent-2-700: #235339;
+  --color-accent-2-800: #193C29;
+  --color-accent-2-900: #10281B;
+
+  --color-stamp-100: #FBECE7;
+  --color-stamp-200: #F1CDC2;
+  --color-stamp-700: #7C3021;
+
+  /* Deck section-divider ground — unused by the app UI; kept for parity
+     with the original handoff, not part of the light retheme. */
+  --color-section: #262a60;
+  --color-section-glow: #353b80;
+  --color-section-ghost: #4c5397;
+
+  /* — type — three roles, three faces: a serif for the human voice
+     (titles), a Vietnamese-built grotesk for interface copy, and a
+     tabular mono for every ledger figure (money, IDs, OTP, dates). */
+  --font-heading: "Spectral", "Noto Serif", Georgia, serif;
+  --font-heading-weight: 600;
+  --font-body: "Be Vietnam Pro", "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --space-1: 2.8px;
+  --space-2: 5.6px;
+  --space-3: 8.4px;
+  --space-4: 11.2px;
+  --space-6: 16.8px;
+  --space-8: 22.4px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* Elevation — soft ink-tinted shadows, paper lifting off paper. */
+  --shadow-sm: 0 0 0 1px color-mix(in srgb, var(--color-text) 12%, transparent);
+  --shadow-md: 0 1px 2px color-mix(in srgb, var(--color-text) 7%, transparent),
+               0 10px 24px color-mix(in srgb, var(--color-text) 10%, transparent);
+  --shadow-lg: 0 4px 8px color-mix(in srgb, var(--color-text) 9%, transparent),
+               0 24px 48px color-mix(in srgb, var(--color-text) 16%, transparent);
+}
+
+body {
+  /* Ruled ledger paper — a hairline every 28px behind the whole app. */
+  background:
+    repeating-linear-gradient(to bottom,
+      transparent, transparent 27px,
+      var(--color-paper-line) 27px, var(--color-paper-line) 28px),
+    var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
+
+.lighten{mix-blend-mode:lighten;background-color:transparent}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Components — built with the tokens above. Plain CSS
+   on plain HTML: no JavaScript, no build step. Each class is documented in
+   readme.md and demonstrated in foundations/ and components/.
+   ══════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-size: 20px; line-height: 1.55; font-weight: 400; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  line-height: 1.14; letter-spacing: -0.008em; margin: 0 0 var(--space-2);
+}
+h1 { font-size: 48px; }
+h2 { font-size: 38px; }
+h3 { font-size: 31px; }
+h4 { font-size: 25px; }
+h5 { font-size: 21px; }
+h6 { font-size: 18px; }
+h6 { letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+figure { margin: 0; }
+figcaption {
+  font-size: 15px; margin-top: var(--space-1);
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+code {
+  font-family: var(--font-mono); font-size: 0.92em;
+  background: var(--color-neutral-100); padding: 1px 6px; border-radius: 4px;
+}
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 24%, transparent); }
+
+/* — rules — */
+/* Rules fade to transparent at both ends instead of stopping cleanly — a
+   signature carried over from the original system. The ramp is 48px an
+   end, painted from the divider token. */
+.hr {
+  height: 1px; border: 0; margin: var(--space-4) 0;
+  background: linear-gradient(to right,
+    transparent, var(--color-divider) 48px,
+    var(--color-divider) calc(100% - 48px), transparent);
+}
+
+/* — stamp badge — the SCR-0X form code, worn as a rubber-stamp mark.
+   Every screen already carries this code in its copy; this is that code
+   made into the page's one recurring, load-bearing ornament. */
+.stamp {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--color-stamp);
+  border: 1.5px dashed var(--color-stamp);
+  border-radius: var(--radius-sm);
+  padding: 3px 11px;
+  transform: rotate(-2deg);
+  margin-bottom: var(--space-3);
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  white-space: nowrap;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-body); font-weight: 600;
+  font-size: 19px; line-height: 1.2; /* matches the .input's font size —
+     the pair sits side by side in sign-up rows */
+  background: transparent; border: 1.5px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease;
+}
+.btn svg { display: block; flex: none; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:not(:disabled):active { transform: scale(0.97); }
+.btn-primary { color: #fff; background: var(--color-accent); border-color: var(--color-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--color-accent-700); border-color: var(--color-accent-700); }
+.btn-primary:active { background: var(--color-accent-800); border-color: var(--color-accent-800); }
+.btn-secondary { color: var(--color-text); border-color: var(--color-divider); background: var(--color-surface); }
+.btn-secondary:hover:not(:disabled) { background: var(--color-neutral-100); border-color: var(--color-neutral-400); }
+.btn-secondary:active { background: var(--color-neutral-200); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover:not(:disabled) { background: var(--color-accent-100); }
+.btn-ghost:active { background: var(--color-accent-200); }
+.btn-icon { width: 42px; height: 42px; padding: 0; }
+.btn-block { width: 100%; margin-top: var(--space-2); }
+
+/* — forms — */
+.field > label {
+  display: block; font-size: 17px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 19px; color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-divider); border-radius: var(--radius-md);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+
+/* — input with leading icon — */
+.field-icon { position: relative; display: flex; align-items: center; }
+.field-icon > svg {
+  position: absolute; left: 13px; pointer-events: none;
+  color: color-mix(in srgb, var(--color-text) 45%, transparent);
+  transition: color 150ms ease;
+}
+.field-icon:focus-within > svg { color: var(--color-accent); }
+.field-icon > .input { padding-left: 46px; }
+textarea.input { min-height: 90px; resize: vertical; }
+.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 19px; }
+.radio input, .seg-opt input {
+  position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+.radio .dot {
+  position: relative;
+  width: 21px; height: 21px; flex: none; border-radius: 50%;
+  border: 1.5px solid var(--color-divider);
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+.radio:hover .dot { border-color: var(--color-accent); }
+.radio input:checked + .dot {
+  border-color: var(--color-accent); background: var(--color-accent);
+  box-shadow: inset 0 0 0 5px var(--color-surface);
+}
+/* .dot--check: biến thể checkbox (bo vuông) của .dot, vẽ thêm dấu tick khi chọn. */
+.radio input:checked + .dot.dot--check::after {
+  content: "";
+  position: absolute; left: 5px; top: 1px;
+  width: 5px; height: 10px;
+  border: solid var(--color-surface);
+  border-width: 0 2px 2px 0;
+  transform: rotate(40deg);
+  animation: check-pop 160ms ease-out both;
+}
+@keyframes check-pop {
+  from { transform: rotate(40deg) scale(0.4); opacity: 0; }
+  to { transform: rotate(40deg) scale(1); opacity: 1; }
+}
+.radio input:focus-visible + .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.seg {
+  display: inline-flex; overflow: hidden;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; font-size: 18px; cursor: pointer;
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+/* — OTP cells — six boxed digits instead of one blurred text field: the
+   bank-card-slot pattern people already recognize from real OTP prompts. */
+.otp-cells { display: flex; gap: 10px; }
+.otp-cell {
+  width: 50px; height: 58px; text-align: center; padding: 0;
+  font-family: var(--font-mono); font-size: 27px; font-weight: 600;
+  color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-divider); border-radius: var(--radius-md);
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+.otp-cell:hover:not(:disabled) { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.otp-cell:focus-visible { border-color: var(--color-accent); outline: none; box-shadow: 0 0 0 3px var(--color-accent-100); }
+.otp-cell.filled { border-color: var(--color-accent-400); background: var(--color-accent-100); }
+.otp-cell:disabled { opacity: 0.5; }
+
+/* — cards — a bordered box of ledger-form paper. When it carries a
+   .card-kicker, that label becomes a tab clipped to the top edge, the way
+   a paper form's section box carries its own printed heading. */
+.card {
+  position: relative;
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-divider);
+  transition: opacity 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+.card.stub { background: var(--color-surface-soft); }
+.card:has(.card-kicker) { padding-top: calc(var(--space-3) + 16px); }
+.card-kicker {
+  position: absolute; top: -13px; left: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--color-surface);
+  padding: 2px 10px;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-accent);
+  border: 1.5px solid var(--color-divider); border-radius: 999px;
+}
+.card.stub > .card-kicker { background: var(--color-surface-soft); }
+.card-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 23px; line-height: 1.2;
+}
+.card-body { margin: 0; font-size: 18px; opacity: 0.8; flex: 1; }
+.card-meta {
+  display: flex; align-items: center; gap: 6px; font-size: 16px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+
+/* — ledger row — a label, a dotted leader, a mono value: the classic
+   invoice/passbook line, used for every figure that reads as a line item. */
+.ledger-row {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 7px 0;
+}
+.ledger-row + .ledger-row { border-top: 1px dotted var(--color-divider); }
+.ledger-row__label {
+  font-size: 18px; color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  white-space: nowrap;
+}
+.ledger-row__leader {
+  flex: 1; min-width: 12px; align-self: flex-end;
+  border-bottom: 1px dotted color-mix(in srgb, var(--color-text) 35%, transparent);
+  margin-bottom: 5px;
+}
+.ledger-row__value {
+  font-family: var(--font-mono); font-weight: 600; font-size: 19px;
+  white-space: nowrap;
+}
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 16px;
+  font-family: var(--font-body); letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.tag svg { flex: none; }
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-700); }
+.tag-accent-2 { background: var(--color-accent-2-100); color: var(--color-accent-2-700); }
+.tag-success { background: var(--color-accent-2-100); color: var(--color-accent-2-700); }
+.tag-neutral { background: var(--color-neutral-200); color: var(--color-neutral-800); }
+.tag-outline { border: 1px solid var(--color-divider); color: var(--color-text); }
+.tag-stamp { border: 1px solid var(--color-stamp); color: var(--color-stamp); background: var(--color-stamp-100); }
+
+/* — navigation — */
+.nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-accent);
+}
+.nav-brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 24px; margin-right: auto;
+}
+.nav a {
+  color: inherit; text-decoration: none; font-size: 19px;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: color 150ms ease;
+}
+.nav a svg { color: color-mix(in srgb, var(--color-text) 55%, transparent); transition: color 150ms ease; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+.nav a:hover svg, .nav a[aria-current='page'] svg { color: var(--color-accent); }
+
+/* — tables — */
+.table { width: 100%; border-collapse: collapse; font-size: 19px; }
+.table th {
+  text-align: left; font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: var(--space-2); border-bottom: 1px solid transparent; /* keeps layout; the row paints the fading rule */
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid transparent;
+  font-family: var(--font-mono);
+}
+.table td .tag { font-family: var(--font-body); }
+/* Row rules as row-level strips so the end-fade spans the row, not each cell. */
+.table thead tr {
+  background: linear-gradient(to right,
+    transparent, var(--color-divider) 48px,
+    var(--color-divider) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+.table tbody tr {
+  background: linear-gradient(to right,
+    transparent, color-mix(in srgb, var(--color-text) 12%, transparent) 48px,
+    color-mix(in srgb, var(--color-text) 12%, transparent) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+/* Ledger banding — every other row carries a faint tint, the bookkeeper's
+   register stripe, layered under the same fading row rule. */
+.table tbody tr:nth-child(even) {
+  background:
+    linear-gradient(color-mix(in srgb, var(--color-text) 4%, transparent),
+                    color-mix(in srgb, var(--color-text) 4%, transparent)) no-repeat 0 0 / 100% 100%,
+    linear-gradient(to right,
+      transparent, color-mix(in srgb, var(--color-text) 12%, transparent) 48px,
+      color-mix(in srgb, var(--color-text) 12%, transparent) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+.table tbody tr { transition: background-color 150ms ease; }
+.table tbody tr:hover {
+  /* the hover tint layers over the row rule, which keeps painting */
+  background:
+    linear-gradient(color-mix(in srgb, var(--color-accent) 6%, transparent),
+                    color-mix(in srgb, var(--color-accent) 6%, transparent)) no-repeat 0 0 / 100% 100%,
+    linear-gradient(to right,
+      transparent, color-mix(in srgb, var(--color-text) 12%, transparent) 48px,
+      color-mix(in srgb, var(--color-text) 12%, transparent) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+
+/* — dialog — */
+.dialog-backdrop {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-neutral-900) 55%, transparent);
+}
+.dialog {
+  width: min(440px, 100%); display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  background: var(--color-surface); box-shadow: var(--shadow-lg);
+}
+.dialog-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 26px;
+}
+.dialog-body { font-size: 19px; opacity: 0.85; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }

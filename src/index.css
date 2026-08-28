@@ -1,0 +1,161 @@
+@import "./styles/nocturne.css";
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-size: 21px;
+}
+
+a {
+  text-decoration: none;
+}
+a:hover {
+  color: var(--color-accent-300);
+}
+
+/* Overrides theo README handoff (kích thước lớn hơn bản gốc component library) */
+.btn {
+  font-size: 20px;
+  min-height: 48px;
+  padding-inline: var(--space-4);
+}
+.input {
+  font-size: 21px;
+  min-height: 50px;
+  padding: 10px 14px;
+}
+.field > label {
+  font-size: 19px;
+}
+.card-kicker {
+  font-size: 17px;
+}
+.table {
+  font-size: 21px;
+}
+.table th {
+  font-size: 18px;
+}
+.tag {
+  font-size: 18px;
+  padding: 5px 14px;
+}
+
+/* Khối thông báo lỗi/cảnh báo inline dùng chung ở nhiều màn hình */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 20px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-100);
+  border-left: 2px solid var(--color-accent);
+  line-height: 1.5;
+}
+.notice > svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--color-accent);
+}
+.notice > div { flex: 1; min-width: 0; }
+
+/* Nhãn nhỏ đánh dấu dữ liệu/UI chỉ phục vụ test — dễ nhận biết và dễ gỡ khi lên production. */
+.mock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Motion — orchestrated ở đúng một khoảnh khắc (thanh toán thành công),
+   còn lại là chuyển động nhỏ, yên tĩnh cho phản hồi thao tác.
+   ══════════════════════════════════════════════════════════════════ */
+
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: page-fade-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes stagger-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stagger-in > * {
+  animation: stagger-fade-in 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-in > *:nth-child(1) { animation-delay: 40ms; }
+.stagger-in > *:nth-child(2) { animation-delay: 110ms; }
+.stagger-in > *:nth-child(3) { animation-delay: 180ms; }
+.stagger-in > *:nth-child(4) { animation-delay: 250ms; }
+
+@keyframes ring-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent-2) 35%, transparent); }
+  50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-accent-2) 0%, transparent); }
+}
+@keyframes check-draw {
+  to { stroke-dashoffset: 0; }
+}
+.result-icon {
+  width: 84px; height: 84px; border-radius: 50%;
+  display: grid; place-items: center; margin: 0 auto var(--space-3);
+  animation: ring-pop 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.result-icon--success {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2);
+  animation: ring-pop 480ms cubic-bezier(0.16, 1, 0.3, 1) both, ring-pulse 2.2s ease-out 480ms 2;
+}
+.result-icon--fail {
+  background: var(--color-stamp-100);
+  color: var(--color-stamp);
+}
+.result-icon--success svg path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: check-draw 360ms ease-out 340ms forwards;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.otp-shake { animation: shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.pulse { animation: soft-pulse 1s ease-in-out infinite; }
+
+/* Sidebar cột 320px cố định cạnh nội dung co giãn — trên màn hẹp phải xếp
+   chồng, nếu không sẽ tràn ngang. !important vì cột được set qua inline
+   style (grid-template-columns), media query không override được nếu không. */
+@media (max-width: 860px) {
+  .payment-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .stagger-in > *,
+  .result-icon,
+  .result-icon--success,
+  .result-icon--success svg path,
+  .otp-shake,
+  .pulse {
+    animation: none !important;
+  }
+  * { transition-duration: 0.01ms !important; }
+}
