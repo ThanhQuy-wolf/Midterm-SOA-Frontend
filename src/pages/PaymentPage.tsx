@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { getAvailableBalance, lookupTuitionByStudentId } from "../api/tuition";
 import { initiateTransaction } from "../api/transaction";
+import { getApiErrorMessage } from "../api/client";
 import { formatVnd } from "../utils/format";
 import {
   IconAlertCircle,
@@ -100,11 +101,14 @@ export function PaymentPage() {
 
   function handleConfirm() {
     if (!canConfirm || !tuition) return;
-    initiateMutation.mutate(tuition.studentId, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["balance"] });
+    initiateMutation.mutate(
+      { studentId: tuition.studentId, studentName: tuition.studentName },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["balance"] });
+        },
       },
-    });
+    );
   }
 
   const payerEmailValid = !!payer?.payerEmail;
@@ -282,7 +286,10 @@ export function PaymentPage() {
             {initiateMutation.isError && (
               <div className="notice">
                 <IconAlertCircle size={22} />
-                <div>Không thể tạo giao dịch, vui lòng thử lại.</div>
+                <div>
+                  {getApiErrorMessage(initiateMutation.error) ??
+                    "Không thể tạo giao dịch, vui lòng thử lại."}
+                </div>
               </div>
             )}
 

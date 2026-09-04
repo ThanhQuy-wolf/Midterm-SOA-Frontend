@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getTransactionHistory } from "../api/transaction";
-import type { TransactionStatus } from "../types/domain";
+import { getTransactionHistory } from "../api/history";
+import type { PaymentHistoryStatus } from "../types/domain";
 import { formatDateTime, formatVnd } from "../utils/format";
 import {
   IconCheckCircle,
@@ -11,14 +11,11 @@ import {
 } from "../components/icons";
 import type { ComponentType } from "react";
 
-const STATUS_LABEL: Record<TransactionStatus, [string, string, ComponentType<{ size?: number }>]> = {
-  INITIATED: ["Đang xử lý", "tag tag-neutral", IconClock],
-  OTP_SENT: ["Đang xử lý", "tag tag-neutral", IconClock],
-  OTP_VERIFIED: ["Đang xử lý", "tag tag-neutral", IconClock],
-  COMPLETED: ["Thành công", "tag tag-success", IconCheckCircle],
-  EXPIRED: ["Hết hạn OTP", "tag tag-stamp", IconXCircle],
+const STATUS_LABEL: Record<PaymentHistoryStatus, [string, string, ComponentType<{ size?: number }>]> = {
+  PENDING: ["Chờ xác thực OTP", "tag tag-neutral", IconClock],
+  PROCESSING: ["Đang xử lý", "tag tag-neutral", IconClock],
+  SUCCESS: ["Thành công", "tag tag-success", IconCheckCircle],
   FAILED: ["Thất bại", "tag tag-stamp", IconXCircle],
-  CANCELLED: ["Đã hủy", "tag tag-outline", IconXCircle],
 };
 
 export function TransactionHistoryPage() {
@@ -69,7 +66,6 @@ export function TransactionHistoryPage() {
             <tr>
               <th>Thời gian</th>
               <th>Mã giao dịch</th>
-              <th>MSSV</th>
               <th style={{ textAlign: "right", paddingRight: "calc(var(--space-8) * 2)" }}>Số tiền</th>
               <th>Trạng thái</th>
             </tr>
@@ -78,18 +74,28 @@ export function TransactionHistoryPage() {
             {history.map((row) => {
               const [label, tagClass, StatusIcon] = STATUS_LABEL[row.status];
               return (
-                <tr key={row.transactionId}>
+                <tr key={row.id}>
                   <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</td>
-                  <td style={{ fontWeight: 600 }}>{row.transactionId}</td>
-                  <td>{row.studentId}</td>
+                  <td style={{ fontWeight: 600 }}>{row.id}</td>
                   <td style={{ textAlign: "right", paddingRight: "calc(var(--space-8) * 2)", fontWeight: 600 }}>
-                    {formatVnd(row.amountToPay)}
+                    {formatVnd(row.amount)}
                   </td>
                   <td>
                     <span className={tagClass}>
                       <StatusIcon size={17} />
                       {label}
                     </span>
+                    {row.status === "FAILED" && row.errorMessage && (
+                      <div
+                        style={{
+                          fontSize: 15,
+                          marginTop: 3,
+                          color: "color-mix(in srgb, var(--color-text) 50%, transparent)",
+                        }}
+                      >
+                        {row.errorMessage}
+                      </div>
+                    )}
                   </td>
                 </tr>
               );

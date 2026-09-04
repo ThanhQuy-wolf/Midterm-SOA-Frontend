@@ -46,12 +46,18 @@ export interface Transaction {
   attemptsLeft?: number;
 }
 
+// Response thật của GET /api/payments/history — độc lập với Transaction/TransactionStatus
+// (state machine phía FE khi đang thao tác OTP) vì backend chỉ phân biệt 4 trạng thái này.
+export type PaymentHistoryStatus = "PENDING" | "PROCESSING" | "SUCCESS" | "FAILED";
+
 export interface TransactionHistoryItem {
-  transactionId: string;
+  id: string;
+  tuitionId: string;
+  amount: number;
+  status: PaymentHistoryStatus;
+  errorMessage: string | null;
   createdAt: string;
-  studentId: string;
-  amountToPay: number;
-  status: TransactionStatus;
+  updatedAt: string;
 }
 
 export interface AvailableBalance {

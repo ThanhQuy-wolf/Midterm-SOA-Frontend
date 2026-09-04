@@ -14,7 +14,7 @@ export function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: (data) => {
-      signIn(data.accessToken, data.payer);
+      signIn(data.accessToken, data.userId, data.payer);
       navigate("/payment", { replace: true });
     },
   });
@@ -83,24 +83,24 @@ export function LoginPage() {
         </button>
       </form>
 
-      {import.meta.env.VITE_USE_MOCK === "true" && (
+      {import.meta.env.DEV && (
         <div
           className="card"
           style={{ marginTop: "var(--space-4)", textAlign: "left", fontSize: 18, lineHeight: 1.7 }}
         >
           <div className="card-kicker mock-badge">
             <IconFlask size={18} />
-            Dữ liệu thử nghiệm
+            Tài khoản demo (backend)
           </div>
           <div>
-            Tên đăng nhập: <code>nguyenvana</code> · Mật khẩu: <code>123456</code>
+            <code>524h0088</code> / <code>123456</code> — số dư 100.000.000, học phí HK1-2526 chưa đóng
           </div>
           <div>
-            Số dư khả dụng: <span style={{ fontFamily: "var(--font-mono)" }}>1.000.000.000 ₫</span>
+            <code>524h0456</code> / <code>123456</code> — demo lỗi thiếu số dư
           </div>
           <div>
-            MSSV test: <code>52100001</code>, <code>52100002</code> (chưa thanh toán) ·{" "}
-            <code>52100003</code> (đã thanh toán)
+            MSSV tra cứu hộ: <code>524H0123</code> (đã đóng hết) · <code>524H0100</code>,{" "}
+            <code>524H0789</code> (nợ nhiều kỳ)
           </div>
         </div>
       )}
