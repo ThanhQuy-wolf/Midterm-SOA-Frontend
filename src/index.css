@@ -2,66 +2,395 @@
 
 :root {
   color-scheme: light;
-}
 
-body {
-  margin: 0;
-  font-size: 21px;
+  /* Page shell — one measure for every screen, so titles, cards and table
+     rules all start on the same left edge as you move between pages. */
+  --shell-max: 1120px;
+  --shell-pad-x: clamp(20px, 4vw, 56px);
+  --shell-pad-y: clamp(32px, 4vw, 56px);
 }
 
 a {
   text-decoration: none;
 }
 a:hover {
-  color: var(--color-accent-300);
+  color: var(--color-accent-700);
 }
 
-/* Overrides theo README handoff (kích thước lớn hơn bản gốc component library) */
-.btn {
-  font-size: 20px;
-  min-height: 48px;
+.shell {
+  flex: 1;
+  width: 100%;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: var(--shell-pad-y) var(--shell-pad-x) var(--space-10);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   App bar — brand, the two sections of the app as file tabs sitting on the
+   accent rule, then who is signed in and what they have to spend.
+   ══════════════════════════════════════════════════════════════════ */
+
+.appbar {
+  position: sticky; top: 0; z-index: 5;
+  padding-inline: var(--shell-pad-x);
+}
+.appbar__links {
+  display: flex;
+  align-self: stretch;
+  margin: calc(var(--space-3) * -1) auto calc(var(--space-3) * -1) 0;
+}
+.appbar__links a {
   padding-inline: var(--space-4);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.input {
-  font-size: 21px;
-  min-height: 50px;
-  padding: 10px 14px;
+/* The current section reads as a tab resting on the bar's own rule. */
+.appbar__links a[aria-current="page"] { background: var(--color-accent-100); }
+
+.appbar__id { display: flex; align-items: center; gap: var(--space-3); }
+.appbar__idtext { text-align: right; line-height: 1.35; }
+.appbar__idtext .meta {
+  max-width: 20ch;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.field > label {
-  font-size: 19px;
-}
-.card-kicker {
-  font-size: 17px;
-}
-.table {
-  font-size: 21px;
-}
-.table th {
-  font-size: 18px;
-}
-.tag {
-  font-size: 18px;
-  padding: 5px 14px;
+.avatar {
+  width: 40px; height: 40px; flex: none;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--fs-sm);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
-/* Khối thông báo lỗi/cảnh báo inline dùng chung ở nhiều màn hình */
+@media (max-width: 860px) {
+  .appbar { gap: var(--space-4); }
+  .appbar__links a { padding-inline: var(--space-3); font-size: var(--fs-sm); }
+  .appbar__idtext { display: none; }
+  .appbar__signout { display: none; }
+}
+@media (max-width: 620px) {
+  .nav-brand { display: none; }
+}
+
+/* Figure sizes as classes rather than inline numbers — a sum keeps the same
+   weight wherever it appears, and there is one place to retune the ramp. */
+.fig-hero { font-size: var(--fs-fig-hero); line-height: 1.1; }
+.fig-lg { font-size: var(--fs-fig-lg); line-height: 1.2; }
+.fig-sm { font-size: var(--fs-fig); line-height: 1.3; }
+
+.meta {
+  font-size: var(--fs-sm);
+  color: color-mix(in srgb, var(--color-text) 58%, transparent);
+}
+.meta-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-sm);
+  color: color-mix(in srgb, var(--color-text) 58%, transparent);
+}
+.meta-label > svg { flex: none; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Sign in — the one screen with no data on it, so the document itself is
+   the hero: a form card on ledger paper, stamped with its file code.
+   ══════════════════════════════════════════════════════════════════ */
+
+.auth-shell {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding-top: clamp(0px, 6vh, 56px);
+}
+.auth-brand {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: var(--fs-subtitle);
+  margin-bottom: var(--space-4);
+}
+.auth-card { gap: var(--space-6); }
+/* Only the title has to clear the seal; the line under it runs full width. */
+.auth-card > header > h1 { padding-right: 84px; }
+.auth-card__seal {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  margin: 0;
+}
+.auth-form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.auth-demo { margin-top: var(--space-8); }
+.demo-list { margin: 0; font-size: var(--fs-sm); }
+.demo-list dt { margin-top: var(--space-3); }
+.demo-list dt:first-child { margin-top: 0; }
+.demo-list dd {
+  margin: 2px 0 0;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Page header band — stamp, title, one line of orientation, and a rule
+   that fades out at both ends like every other rule in the system. Every
+   screen opens the same way, so the eye lands in the same place each time.
+   ══════════════════════════════════════════════════════════════════ */
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-8);
+  background: linear-gradient(to right,
+    transparent, var(--color-divider) 40px,
+    var(--color-divider) calc(100% - 40px), transparent) no-repeat bottom / 100% 1px;
+}
+.page-head h1 {
+  margin: 0;
+  display: flex; align-items: center; gap: var(--space-3);
+}
+.page-head h1 > svg { flex: none; color: var(--color-accent); }
+.page-head__sub {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-lg);
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  max-width: 56ch;
+}
+/* The stamp sits in the band's top-right, where a clerk's seal lands on a
+   filed form — not stacked above the title as a label. */
+.page-head .stamp { margin: 6px 0 0; flex: none; }
+.page-head__aside { flex: none; text-align: right; }
+
+@media (max-width: 620px) {
+  .page-head { flex-direction: column-reverse; align-items: flex-start; gap: var(--space-3); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Sections of a form — a circled numeral, because these three groups are
+   genuinely filled in order, and the numbering already exists in the spec.
+   ══════════════════════════════════════════════════════════════════ */
+
+.step {
+  display: inline-grid; place-items: center;
+  width: 18px; height: 18px; flex: none;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Inset — the system writing back. Input fields are where the payer writes;
+   an inset is the ledger's own answer, so it reads as a different material:
+   ivory stock, ruled off with the accent, never editable. */
+.inset {
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-divider);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+}
+.inset--muted { border-left-color: var(--color-neutral-400); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Payment slip — the carbon copy beside the form. It fills in as the form
+   is filled, and it carries the confirm action, because the thing you sign
+   is the slip and not the questionnaire.
+   ══════════════════════════════════════════════════════════════════ */
+
+.payment-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: var(--space-8);
+  align-items: start;
+}
+.payment-form {
+  display: flex; flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+.slip { position: sticky; top: calc(var(--space-8) + 32px); }
+.slip__empty {
+  font-size: var(--fs-sm);
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+  line-height: 1.65;
+}
+.slip__terms { align-items: flex-start; font-size: var(--fs-sm); line-height: 1.55; }
+.slip__hint {
+  margin-top: var(--space-2);
+  text-align: center;
+}
+.slip__note {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: var(--space-4) 0 0;
+  padding-inline: var(--space-2);
+  font-size: var(--fs-xs); line-height: 1.6;
+  color: color-mix(in srgb, var(--color-text) 45%, transparent);
+}
+.slip__note > svg { flex: none; margin-top: 2px; }
+
+/* The lookup answer: name first and largest, because confirming you have the
+   right student is the only question this panel exists to settle. */
+.lookup__name {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--fs-heading); line-height: 1.25;
+}
+.lookup__meta {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--fs-sm);
+  color: color-mix(in srgb, var(--color-text) 58%, transparent);
+}
+
+/* Stack earlier than before: the slip now takes 420px, so the form column
+   would be squeezed below a comfortable measure sooner. */
+@media (max-width: 960px) {
+  .payment-grid { grid-template-columns: 1fr; }
+  .slip { position: static; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   OTP — the six boxes are the hero, so they are centred and given the most
+   room on the card; the clock sits beside their label rather than becoming
+   a second large figure competing with them.
+   ══════════════════════════════════════════════════════════════════ */
+
+.otp-shell { max-width: 620px; margin: 0 auto; }
+/* Sized to the cells themselves (fit-content), so the label, the clock and
+   the attempts line all sit exactly on the outer edges of the first and
+   last box rather than a few pixels past them. */
+.otp-block {
+  display: flex; flex-direction: column;
+  gap: var(--space-3);
+  width: fit-content; max-width: 100%;
+  margin: 0 auto;
+  padding: var(--space-4) 0;
+}
+.otp-block__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+}
+.otp-block__head label {
+  font-size: var(--fs-sm);
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.otp-timer {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-fig);
+}
+.otp-timer > svg { flex: none; opacity: 0.7; }
+.otp-block__foot { width: 100%; }
+
+.otp-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* On a phone the six boxes stop being a fixed 396px row and divide the width
+   they are given, so they never push the page sideways. The card tightens
+   its padding to give them that width back. */
+@media (max-width: 540px) {
+  .card { padding: var(--space-4); }
+  .card:has(.card-kicker) { padding-top: calc(var(--space-4) + 6px); }
+  .perf { margin-inline: calc(var(--space-4) * -1); }
+
+  .otp-block { width: 100%; }
+  .otp-cells { width: 100%; gap: 6px; }
+  .otp-cell { width: auto; flex: 1 1 0; min-width: 0; height: 58px; font-size: 24px; }
+  .otp-cell:nth-child(3) { margin-right: var(--space-2); }
+
+  .receipt__sum, .receipt__reason { padding-right: 0; }
+  .receipt__seal { position: static; align-self: flex-start; }
+  .result-actions .btn { flex: 1 1 100%; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Notices — one voice for anything the ledger has to say back. The rule on
+   the left carries the severity; the body stays plain text.
+   ══════════════════════════════════════════════════════════════════ */
+
 .notice {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  font-size: 20px;
-  padding: 9px 12px;
-  border-radius: var(--radius-md);
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
   background: var(--color-neutral-100);
-  border-left: 2px solid var(--color-accent);
-  line-height: 1.5;
+  border-left: 3px solid var(--color-accent);
+  line-height: 1.6;
 }
 .notice > svg {
   flex: none;
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--color-accent);
 }
 .notice > div { flex: 1; min-width: 0; }
+.notice--warn {
+  background: var(--color-stamp-100);
+  border-left-color: var(--color-stamp);
+  color: var(--color-stamp-700);
+}
+.notice--warn > svg { color: var(--color-stamp); }
+.notice--ok {
+  background: var(--color-accent-2-100);
+  border-left-color: var(--color-accent-2);
+  color: var(--color-accent-2-700);
+}
+.notice--ok > svg { color: var(--color-accent-2); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Result — the one orchestrated moment in the app. The mark lands, then a
+   receipt: the sum, a tear line, and the line items that back it up.
+   ══════════════════════════════════════════════════════════════════ */
+
+.result-shell { max-width: 540px; margin: 0 auto; padding-top: clamp(0px, 3vh, 32px); }
+.result-title {
+  text-align: center;
+  font-size: var(--fs-title);
+  margin: 0 0 var(--space-6);
+}
+.receipt { position: relative; }
+.receipt__seal { position: absolute; top: var(--space-4); right: var(--space-4); margin: 0; }
+.receipt__sum { padding-right: 96px; }
+.receipt__reason { margin: 0; padding-right: 96px; font-size: var(--fs-base); line-height: 1.65; }
+.result-actions {
+  display: flex; flex-wrap: wrap; gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.result-actions .btn { flex: 1 1 auto; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   History
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Wide content scrolls inside its own box; the page body never does. */
+.table-wrap { width: 100%; overflow-x: auto; }
+
+/* Sums right-align so the digits stack into a column you can read down. */
+.history-table .col-amount { text-align: right; padding-right: var(--space-6); }
+.history-error {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  color: color-mix(in srgb, var(--color-text) 52%, transparent);
+}
+
+/* An empty screen is an invitation to act, so it ends in the action. */
+.empty {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  padding: var(--space-10) var(--space-4);
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+.empty > svg { opacity: 0.45; }
+.empty__title {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: var(--fs-heading);
+  color: var(--color-text);
+}
+.empty__body { margin: var(--space-2) 0 var(--space-6); max-width: 40ch; font-size: var(--fs-sm); }
 
 /* Nhãn nhỏ đánh dấu dữ liệu/UI chỉ phục vụ test — dễ nhận biết và dễ gỡ khi lên production. */
 .mock-badge {
@@ -108,7 +437,7 @@ a:hover {
 }
 .result-icon {
   width: 84px; height: 84px; border-radius: 50%;
-  display: grid; place-items: center; margin: 0 auto var(--space-3);
+  display: grid; place-items: center; margin: 0 auto var(--space-4);
   animation: ring-pop 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .result-icon--success {
@@ -139,13 +468,6 @@ a:hover {
   50% { opacity: 0.55; }
 }
 .pulse { animation: soft-pulse 1s ease-in-out infinite; }
-
-/* Sidebar cột 320px cố định cạnh nội dung co giãn — trên màn hẹp phải xếp
-   chồng, nếu không sẽ tràn ngang. !important vì cột được set qua inline
-   style (grid-template-columns), media query không override được nếu không. */
-@media (max-width: 860px) {
-  .payment-grid { grid-template-columns: 1fr !important; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .page-enter,

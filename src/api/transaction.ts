@@ -55,16 +55,46 @@ function classifyVerifyError(error: unknown): {
   const status = getApiErrorStatus(error);
   const message = (getApiErrorMessage(error) ?? "").toLowerCase();
 
-  if (status === 409 || /đã (được )?thanh toán|already paid/.test(message)) {
-    return { failureReason: "TUITION_ALREADY_PAID", locked: true, expired: false };
+  // payment-service dùng chung InsufficientBalanceException (-> HTTP 409) cho
+  // rất nhiều ca khác nhau, nên riêng mã 409 KHÔNG nói lên điều gì. Điểm tựa
+  // đúng là: trong các lỗi 409 của verify-otp, "OTP không hợp lệ" là ca DUY
+  // NHẤT còn thử lại được — mọi 409 khác đều nghĩa là saga đã hoàn tiền và ghi
+  // giao dịch thành FAILED trong DB, không được trừ lượt rồi cho gõ tiếp.
+
+  // Hết lượt thử: backend trả riêng 429 cho ca này nên mã HTTP đủ tin cậy.
+  if (status === 429 || /quá nhiều lần|quá số lần|too many|maximum/.test(message)) {
+    return { failureReason: "OTP_LOCKED", locked: true, expired: false };
   }
+  // Giao dịch không tồn tại (404) hoặc không thuộc người đang đăng nhập (403).
+  if (status === 404 || status === 403) {
+    return { failureReason: "SYSTEM_ERROR", locked: true, expired: false };
+  }
+
+  // "OTP không hợp lệ hoặc đã hết hạn" (PaymentService.java:172) = OTP SAI.
+  // Backend cố tình gộp sai/hết hạn vào một câu để không lộ thông tin, nên phải
+  // khớp cụm này TRƯỚC luật "hết hạn" bên dưới — nếu không chính chữ "hết hạn"
+  // trong câu sẽ bị hiểu nhầm thành OTP đã hết hiệu lực. Ca hết hạn thật đã
+  // được đồng hồ đếm ngược phía client xử lý.
+  if (/otp không hợp lệ|otp không đúng|invalid otp/.test(message)) {
+    return { locked: false, expired: false };
+  }
+
   if (/hết hạn|hết hiệu lực|expired/.test(message)) {
     return { failureReason: "OTP_EXPIRED", locked: false, expired: true };
   }
-  if (/quá số lần|khóa|locked|too many|maximum/.test(message)) {
-    return { failureReason: "OTP_LOCKED", locked: true, expired: false };
+  // Chủ ngữ phải là khoản học phí, và có thể có chữ chen vào giữa:
+  //   "Học phí đã được người khác thanh toán" (PaymentService.java:260)
+  //   "Khoản học phí này đã được đóng"        (PaymentService.java:59)
+  // Ràng buộc "học phí|khoản" ở đầu để không nuốt nhầm "Thanh toán thất bại".
+  if (/(học phí|khoản).{0,40}(thanh toán|đóng)|already paid/.test(message)) {
+    return { failureReason: "TUITION_ALREADY_PAID", locked: true, expired: false };
   }
-  if (/không tồn tại|not found|không thuộc/.test(message)) {
+  if (/số dư không đủ|insufficient/.test(message)) {
+    return { failureReason: "INSUFFICIENT_BALANCE", locked: true, expired: false };
+  }
+  // Lưới an toàn: 409 nào chưa nhận dạng được cũng là giao dịch đã chết hẳn
+  // (lỗi cấu hình, không tìm thấy tài khoản/khoản học phí, saga thất bại…).
+  if (status === 409 || /không tồn tại|not found|không thuộc/.test(message)) {
     return { failureReason: "SYSTEM_ERROR", locked: true, expired: false };
   }
   // Mặc định: OTP sai bình thường.
@@ -86,8 +116,15 @@ export async function verifyOtp(transaction: Transaction, otp: string): Promise<
     });
     return { ...transaction, status: "COMPLETED", failureReason: undefined };
   } catch (error) {
-    if (getApiErrorStatus(error) === undefined) {
+    const status = getApiErrorStatus(error);
+    if (status === undefined) {
       throw error; // lỗi mạng — để React Query xử lý
+    }
+    // 5xx là sự cố phía server (vd. 503 "Tài khoản đang được xử lý bởi một giao
+    // dịch khác"), không phải người dùng gõ sai. Ném ra để React Query báo lỗi
+    // thay vì rơi xuống nhánh mặc định và trừ oan một lượt thử.
+    if (status >= 500) {
+      throw error;
     }
     const { failureReason, locked, expired } = classifyVerifyError(error);
 

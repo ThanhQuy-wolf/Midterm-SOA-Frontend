@@ -25,83 +25,84 @@ export function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 440, margin: "0 auto", paddingTop: "var(--space-6)", textAlign: "center" }}>
-      <div className="stamp">SCR-01</div>
-      <h1 style={{ fontSize: 50, lineHeight: 1.1, margin: "0 0 6px" }}>Đăng nhập</h1>
-      <p
-        style={{
-          margin: "0 0 var(--space-6)",
-          fontSize: 20,
-          color: "color-mix(in srgb, var(--color-text) 55%, transparent)",
-        }}
-      >
-        Đăng nhập vào hệ thống iBanking
-      </p>
+    <div className="auth-shell">
+      {/* /login sits outside the app bar, so the wordmark has to appear here
+          or the screen carries no identity at all. */}
+      <div className="auth-brand">
+        iBanking<span style={{ color: "var(--color-accent)" }}>.</span>
+      </div>
 
-      <form
-        onSubmit={handleSubmit}
-        autoComplete="off"
-        style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", textAlign: "left" }}
-      >
-        <div className="field">
-          <label>Tên đăng nhập</label>
-          <div className="field-icon">
-            <IconUser size={22} />
-            <input
-              className="input"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="off"
-              required
-            />
-          </div>
-        </div>
-        <div className="field">
-          <label>Mật khẩu</label>
-          <div className="field-icon">
-            <IconLock size={22} />
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="off"
-              required
-            />
-          </div>
-        </div>
+      <div className="card auth-card">
+        <div className="stamp auth-card__seal">SCR-01</div>
 
-        {loginMutation.isError && (
-          <div className="notice otp-shake">
-            <IconAlertCircle size={22} />
-            <div>Tên đăng nhập hoặc mật khẩu không đúng.</div>
-          </div>
-        )}
+        <header>
+          <h1 style={{ fontSize: "var(--fs-title)", margin: 0 }}>Đăng nhập</h1>
+          <p className="meta" style={{ margin: "var(--space-2) 0 0" }}>
+            Tra cứu và đóng học phí bằng tài khoản iBanking của bạn.
+          </p>
+        </header>
 
-        <button type="submit" className="btn btn-primary btn-block" disabled={loginMutation.isPending}>
-          {loginMutation.isPending ? "Đang đăng nhập…" : "Đăng nhập"}
-        </button>
-      </form>
+        <form onSubmit={handleSubmit} autoComplete="off" className="auth-form">
+          <div className="field">
+            <label htmlFor="login-username">Tên đăng nhập</label>
+            <div className="field-icon">
+              <IconUser size={19} />
+              <input
+                id="login-username"
+                className="input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="off"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="login-password">Mật khẩu</label>
+            <div className="field-icon">
+              <IconLock size={19} />
+              <input
+                id="login-password"
+                className="input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="off"
+                required
+              />
+            </div>
+          </div>
+
+          {loginMutation.isError && (
+            <div className="notice notice--warn otp-shake" role="alert">
+              <IconAlertCircle size={19} />
+              <div>Tên đăng nhập hoặc mật khẩu không đúng. Kiểm tra lại và thử lần nữa.</div>
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary btn-block" disabled={loginMutation.isPending}>
+            {loginMutation.isPending ? "Đang đăng nhập…" : "Đăng nhập"}
+          </button>
+        </form>
+      </div>
 
       {import.meta.env.DEV && (
-        <div
-          className="card"
-          style={{ marginTop: "var(--space-4)", textAlign: "left", fontSize: 18, lineHeight: 1.7 }}
-        >
+        <div className="card stub auth-demo">
           <div className="card-kicker mock-badge">
-            <IconFlask size={18} />
-            Tài khoản demo (backend)
+            <IconFlask size={15} />
+            Tài khoản demo
           </div>
-          <div>
-            <code>524h0088</code> / <code>123456</code> — số dư 100.000.000, học phí HK1-2526 chưa đóng
-          </div>
-          <div>
-            <code>524h0456</code> / <code>123456</code> — demo lỗi thiếu số dư
-          </div>
-          <div>
-            MSSV tra cứu hộ: <code>524H0123</code> (đã đóng hết) · <code>524H0100</code>,{" "}
-            <code>524H0789</code> (nợ nhiều kỳ)
-          </div>
+          <dl className="demo-list">
+            <dt>
+              <code>524h0088</code> / <code>123456</code>
+            </dt>
+            <dd>Số dư 100.000.000, học phí HK1-2526 chưa đóng</dd>
+            <dt>
+              <code>524h0456</code> / <code>123456</code>
+            </dt>
+            <dd>Dựng sẵn tình huống thiếu số dư</dd>
+          </dl>
         </div>
       )}
     </div>

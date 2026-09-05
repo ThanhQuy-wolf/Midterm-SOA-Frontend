@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } 
 import { useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { verifyOtp } from "../api/transaction";
+import { getApiErrorMessage } from "../api/client";
 import type { Transaction } from "../types/domain";
 import {
   IconAlertCircle,
+  IconAlertTriangle,
   IconCheckCircle,
   IconClock,
-  IconKey,
   IconMail,
-  IconShieldCheck,
   IconXCircle,
 } from "../components/icons";
 
@@ -87,7 +87,8 @@ export function OtpVerificationPage() {
       }
       setTransaction(updated);
       setOtpInput("");
-      setMessage(`Mã OTP không đúng. Bạn còn ${updated.attemptsLeft} lần thử.`);
+      // Số lần thử còn lại đã hiển thị ngay dưới ô nhập — không lặp lại ở đây.
+      setMessage("Mã OTP không đúng. Nhập lại mã mới nhất trong email.");
     },
   });
 
@@ -142,82 +143,46 @@ export function OtpVerificationPage() {
   }
 
   const countdown = formatCountdown(deadline - now);
-  const countdownColor = deadline - now <= 30000 ? "var(--color-accent)" : "var(--color-text)";
+  const running = isLive && !timedOut;
+  const urgent = running && deadline - now <= 30000;
   const expired = transaction.status === "EXPIRED" || timedOut;
   const disabledInput = !isLive || timedOut || verifyMutation.isPending;
   const displayMessage = expired ? FAIL_MSG_OTP_EXPIRED : message;
+  const attemptsLeft = transaction.attemptsLeft ?? 0;
 
   return (
-    <div style={{ maxWidth: 780, margin: "0 auto", paddingTop: "var(--space-4)", textAlign: "center" }}>
-      <div className="stamp">SCR-03</div>
-      <h1
-        style={{
-          fontSize: 44,
-          lineHeight: 1.1,
-          margin: "0 0 6px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-        }}
-      >
-        <IconShieldCheck size={38} />
-        Xác thực OTP
-      </h1>
-      <p
-        style={{
-          margin: "0 0 var(--space-4)",
-          fontSize: 20,
-          color: "color-mix(in srgb, var(--color-text) 55%, transparent)",
-        }}
-      >
-        Mã giao dịch <span style={{ fontFamily: "var(--font-mono)" }}>{transaction.transactionId}</span>
-      </p>
+    <div className="otp-shell">
+      <div className="page-head">
+        <div>
+          <h1>Xác thực OTP</h1>
+          <p className="page-head__sub">
+            Giao dịch <span className="fig">{transaction.transactionId}</span>
+          </p>
+        </div>
+        <div className="stamp">SCR-03</div>
+      </div>
 
-      <div className="card elev-sm" style={{ textAlign: "left", padding: "var(--space-8)", width: "800px" }}>
-        <div style={{ display: "flex", gap: 8, fontSize: 20, lineHeight: 1.6 }}>
-          <IconMail size={23} style={{ flex: "none", marginTop: 2, color: "var(--color-accent)" }} />
+      <div className="card elev-sm">
+        <div className="notice">
+          <IconMail size={19} />
           <div>
-            Mã OTP đã gửi tới <strong style={{ fontFamily: "var(--font-mono)" }}>{transaction.maskedEmail}</strong>
+            Mã OTP đã gửi tới <span className="fig">{transaction.maskedEmail}</span>. Mã có hiệu lực trong
+            5 phút.
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "baseline", gap: "var(--space-4)", marginTop: "var(--space-2)" }}>
-          <div>
+        <div className="otp-block">
+          <div className="otp-block__head">
+            <label htmlFor="otp-cell-0">Mã OTP — 6 chữ số</label>
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                fontSize: 18,
-                color: "color-mix(in srgb, var(--color-text) 55%, transparent)",
-              }}
+              className={urgent ? "otp-timer pulse" : "otp-timer"}
+              style={{ color: urgent ? "var(--color-stamp)" : undefined }}
             >
-              <IconClock size={18} />
-              Hiệu lực
-            </div>
-            <div
-              className={isLive && !timedOut && deadline - now <= 30000 ? "pulse" : undefined}
-              style={{ fontSize: 40, fontFamily: "var(--font-mono)", fontWeight: 600, color: countdownColor }}
-            >
-              {isLive && !timedOut ? countdown : "0:00"}
+              <IconClock size={16} />
+              <span className="fig">{running ? countdown : "0:00"}</span>
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: 18, color: "color-mix(in srgb, var(--color-text) 55%, transparent)" }}>
-              Số lần thử còn lại
-            </div>
-            <div style={{ fontSize: 40, fontFamily: "var(--font-mono)", fontWeight: 600 }}>
-              {transaction.attemptsLeft ?? 0}
-            </div>
-          </div>
-        </div>
 
-        <div className="field" style={{ marginTop: "var(--space-2)" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <IconKey size={17} />
-            Mã OTP (6 chữ số)
-          </label>
           <div
             key={message}
             className={message.startsWith("Mã OTP không đúng") ? "otp-cells otp-shake" : "otp-cells"}
@@ -226,6 +191,7 @@ export function OtpVerificationPage() {
             {Array.from({ length: 6 }).map((_, i) => (
               <input
                 key={i}
+                id={i === 0 ? "otp-cell-0" : undefined}
                 ref={(el) => {
                   cellRefs.current[i] = el;
                 }}
@@ -241,38 +207,32 @@ export function OtpVerificationPage() {
               />
             ))}
           </div>
+
+          <div className="meta otp-block__foot">
+            {expired ? "Không còn lượt thử." : `Còn ${attemptsLeft} lần thử.`}
+          </div>
         </div>
 
         {displayMessage && (
-          <div className="notice">
-            <IconAlertCircle size={22} />
+          <div className="notice notice--warn" role="alert">
+            <IconAlertCircle size={19} />
             <div>{displayMessage}</div>
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => verifyMutation.mutate(otpInput)}
-            disabled={!isLive || timedOut || verifyMutation.isPending || otpInput.length !== 6}
-          >
-            {!verifyMutation.isPending && <IconCheckCircle size={21} />}
-            {verifyMutation.isPending ? "Đang xác thực…" : "Xác nhận"}
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={handleCancel}
-            disabled={verifyMutation.isPending}
-            style={{ marginLeft: "auto" }}
-          >
-            <IconXCircle size={21} />
-            Hủy giao dịch
-          </button>
-        </div>
+        {/* Sự cố phía server hoặc mất mạng: verifyOtp ném ra thay vì trừ lượt
+            thử, nên phải báo ở đây — nếu không thao tác sẽ im lặng không phản hồi. */}
+        {verifyMutation.isError && (
+          <div className="notice notice--warn" role="alert">
+            <IconAlertTriangle size={19} />
+            <div>
+              {getApiErrorMessage(verifyMutation.error) ??
+                "Không xác thực được lúc này. Lượt thử của bạn chưa bị trừ, hãy thử lại."}
+            </div>
+          </div>
+        )}
 
-        {expired && (
+        {expired ? (
           <button
             type="button"
             className="btn btn-primary btn-block"
@@ -280,6 +240,27 @@ export function OtpVerificationPage() {
           >
             Quay lại trang thanh toán
           </button>
+        ) : (
+          <div className="otp-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => verifyMutation.mutate(otpInput)}
+              disabled={!isLive || timedOut || verifyMutation.isPending || otpInput.length !== 6}
+            >
+              {!verifyMutation.isPending && <IconCheckCircle size={19} />}
+              {verifyMutation.isPending ? "Đang xác thực…" : "Xác nhận"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleCancel}
+              disabled={verifyMutation.isPending}
+            >
+              <IconXCircle size={19} />
+              Hủy giao dịch
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -69,12 +69,32 @@
   --font-body: "Be Vietnam Pro", "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --space-1: 2.8px;
-  --space-2: 5.6px;
-  --space-3: 8.4px;
-  --space-4: 11.2px;
-  --space-6: 16.8px;
-  --space-8: 22.4px;
+  /* Two type ramps, deliberately separate. Prose steps in a ~1.25 ratio and
+     tops out early — an interface, not a poster. Figures get their own ramp
+     because on a ledger the money is read before the words around it, so a
+     sum must outweigh its label without the label having to shrink. */
+  --fs-display: clamp(31px, 3.6vw, 39px);
+  --fs-title: 30px;
+  --fs-subtitle: 24px;
+  --fs-heading: 20px;
+  --fs-lg: 18px;
+  --fs-base: 17px;
+  --fs-sm: 15px;
+  --fs-xs: 13px;
+
+  --fs-fig-hero: clamp(27px, 7vw, 34px);
+  --fs-fig-lg: 24px;
+  --fs-fig: 18px;
+
+  /* 4px grid. The old scale topped out at 22px against 20px type, which is
+     why every surface read as cramped; a form needs more air than its type. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 14px;
+  --space-4: 20px;
+  --space-6: 32px;
+  --space-8: 48px;
+  --space-10: 72px;
 
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -109,27 +129,34 @@ h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-headi
    ══════════════════════════════════════════════════════════════════ */
 
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-size: 20px; line-height: 1.55; font-weight: 400; }
+body { margin: 0; font-size: var(--fs-base); line-height: 1.6; font-weight: 400; }
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
   line-height: 1.14; letter-spacing: -0.008em; margin: 0 0 var(--space-2);
 }
-h1 { font-size: 48px; }
-h2 { font-size: 38px; }
-h3 { font-size: 31px; }
-h4 { font-size: 25px; }
-h5 { font-size: 21px; }
-h6 { font-size: 18px; }
+h1 { font-size: var(--fs-display); }
+h2 { font-size: var(--fs-title); }
+h3 { font-size: var(--fs-subtitle); }
+h4 { font-size: var(--fs-heading); }
+h5 { font-size: var(--fs-lg); }
+h6 { font-size: var(--fs-xs); }
 h6 { letter-spacing: 0.08em; text-transform: uppercase; }
 p { margin: 0 0 var(--space-3); }
 a { color: var(--color-accent); text-underline-offset: 3px; }
 img { display: block; max-width: 100%; }
 figure { margin: 0; }
 figcaption {
-  font-size: 15px; margin-top: var(--space-1);
+  font-size: var(--fs-sm); margin-top: var(--space-1);
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 .text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+/* Every figure on a ledger is set in the mono face, tabular, so columns of
+   sums line up digit-for-digit down the page. */
+.fig {
+  font-family: var(--font-mono); font-weight: 600;
+  font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
 code {
   font-family: var(--font-mono); font-size: 0.92em;
   background: var(--color-neutral-100); padding: 1px 6px; border-radius: 4px;
@@ -149,17 +176,25 @@ code {
     var(--color-divider) calc(100% - 48px), transparent);
 }
 
+/* — perforation — the tear line on a two-part receipt. Used only where a
+   surface really does split into a stub and a counterfoil, so the dashes
+   stay meaningful instead of becoming a second kind of divider. */
+.perf {
+  height: 0; border: 0; border-top: 1.5px dashed var(--color-divider);
+  margin: var(--space-4) calc(var(--space-6) * -1);
+}
+
 /* — stamp badge — the SCR-0X form code, worn as a rubber-stamp mark.
    Every screen already carries this code in its copy; this is that code
    made into the page's one recurring, load-bearing ornament. */
 .stamp {
   display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
   letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--color-stamp);
   border: 1.5px dashed var(--color-stamp);
   border-radius: var(--radius-sm);
-  padding: 3px 11px;
+  padding: 4px 11px;
   transform: rotate(-2deg);
   margin-bottom: var(--space-3);
 }
@@ -170,10 +205,11 @@ code {
   white-space: nowrap;
   cursor: pointer; text-decoration: none;
   font-family: var(--font-body); font-weight: 600;
-  font-size: 19px; line-height: 1.2; /* matches the .input's font size —
-     the pair sits side by side in sign-up rows */
+  font-size: var(--fs-base); line-height: 1.2; /* matches the .input's font
+     size — the pair sits side by side in sign-up rows */
+  min-height: 46px;
   background: transparent; border: 1.5px solid transparent;
-  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease;
 }
@@ -189,17 +225,17 @@ code {
 .btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
 .btn-ghost:hover:not(:disabled) { background: var(--color-accent-100); }
 .btn-ghost:active { background: var(--color-accent-200); }
-.btn-icon { width: 42px; height: 42px; padding: 0; }
-.btn-block { width: 100%; margin-top: var(--space-2); }
+.btn-icon { width: 46px; height: 46px; padding: 0; }
+.btn-block { width: 100%; }
 
 /* — forms — */
 .field > label {
-  display: block; font-size: 17px; margin-bottom: 5px;
+  display: block; font-size: var(--fs-sm); margin-bottom: var(--space-2);
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
 }
 .input {
-  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
-  font-size: 19px; color: var(--color-text); caret-color: var(--color-accent);
+  width: 100%; min-height: 46px; padding: 10px 14px; font: inherit;
+  font-size: var(--fs-base); color: var(--color-text); caret-color: var(--color-accent);
   background: var(--color-surface);
   border: 1.5px solid var(--color-divider); border-radius: var(--radius-md);
   transition: border-color 150ms ease, box-shadow 150ms ease;
@@ -217,7 +253,7 @@ code {
 .field-icon:focus-within > svg { color: var(--color-accent); }
 .field-icon > .input { padding-left: 46px; }
 textarea.input { min-height: 90px; resize: vertical; }
-.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 19px; }
+.radio { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: var(--fs-base); }
 .radio input, .seg-opt input {
   position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
 }
@@ -253,7 +289,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 .seg-opt {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 12px; font-size: 18px; cursor: pointer;
+  padding: 9px 14px; font-size: var(--fs-sm); cursor: pointer;
 }
 .seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
 .seg-opt:has(input:checked) { color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
@@ -262,10 +298,13 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 /* — OTP cells — six boxed digits instead of one blurred text field: the
    bank-card-slot pattern people already recognize from real OTP prompts. */
-.otp-cells { display: flex; gap: 10px; }
+.otp-cells { display: flex; gap: var(--space-2); }
+/* Split 3 + 3. A six-digit code is spoken and remembered in two triples, so
+   the boxes are grouped the way the code is actually read back. */
+.otp-cell:nth-child(3) { margin-right: var(--space-4); }
 .otp-cell {
-  width: 50px; height: 58px; text-align: center; padding: 0;
-  font-family: var(--font-mono); font-size: 27px; font-weight: 600;
+  width: 56px; height: 66px; text-align: center; padding: 0;
+  font-family: var(--font-mono); font-size: 28px; font-weight: 600;
   color: var(--color-text); caret-color: var(--color-accent);
   background: var(--color-surface);
   border: 1.5px solid var(--color-divider); border-radius: var(--radius-md);
@@ -281,62 +320,79 @@ textarea.input { min-height: 90px; resize: vertical; }
    a paper form's section box carries its own printed heading. */
 .card {
   position: relative;
-  display: flex; flex-direction: column; gap: var(--space-2);
-  padding: var(--space-3); border-radius: var(--radius-md);
+  display: flex; flex-direction: column; gap: var(--space-4);
+  padding: var(--space-6); border-radius: var(--radius-md);
   background: var(--color-surface);
   border: 1.5px solid var(--color-divider);
   transition: opacity 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
 .card.stub { background: var(--color-surface-soft); }
-.card:has(.card-kicker) { padding-top: calc(var(--space-3) + 16px); }
+.card:has(.card-kicker) { padding-top: calc(var(--space-6) + 6px); }
 .card-kicker {
-  position: absolute; top: -13px; left: 14px;
-  display: inline-flex; align-items: center; gap: 6px;
+  position: absolute; top: -12px; left: var(--space-4);
+  display: inline-flex; align-items: center; gap: 7px;
   background: var(--color-surface);
-  padding: 2px 10px;
-  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  padding: 3px 12px;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
   letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-accent);
   border: 1.5px solid var(--color-divider); border-radius: 999px;
 }
 .card.stub > .card-kicker { background: var(--color-surface-soft); }
 .card-title {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 23px; line-height: 1.2;
+  font-size: var(--fs-heading); line-height: 1.2;
 }
-.card-body { margin: 0; font-size: 18px; opacity: 0.8; flex: 1; }
+.card-body { margin: 0; font-size: var(--fs-base); opacity: 0.8; flex: 1; }
 .card-meta {
-  display: flex; align-items: center; gap: 6px; font-size: 16px;
+  display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm);
   color: color-mix(in srgb, var(--color-text) 50%, transparent);
 }
 .elev-sm { box-shadow: var(--shadow-sm); }
 .elev-md { box-shadow: var(--shadow-md); }
 .elev-lg { box-shadow: var(--shadow-lg); }
 
-/* — ledger row — a label, a dotted leader, a mono value: the classic
-   invoice/passbook line, used for every figure that reads as a line item. */
+/* — ledger row — a label on the left, a mono value flushed right: the classic
+   invoice/passbook line, used for every figure that reads as a line item.
+   The row rule between lines is what ties label to value; the old dotted
+   leader running between them was a second connector doing the same job. */
 .ledger-row {
-  display: flex; align-items: baseline; gap: 8px;
-  padding: 7px 0;
+  display: flex; align-items: baseline; gap: var(--space-3);
+  padding: 11px 0;
 }
 .ledger-row + .ledger-row { border-top: 1px dotted var(--color-divider); }
 .ledger-row__label {
-  font-size: 18px; color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  font-size: var(--fs-sm); color: color-mix(in srgb, var(--color-text) 62%, transparent);
   white-space: nowrap;
 }
-.ledger-row__leader {
-  flex: 1; min-width: 12px; align-self: flex-end;
-  border-bottom: 1px dotted color-mix(in srgb, var(--color-text) 35%, transparent);
-  margin-bottom: 5px;
-}
+/* Plain spacer — pushes the value to the right edge of the row. */
+.ledger-row__leader { flex: 1; min-width: var(--space-3); }
 .ledger-row__value {
-  font-family: var(--font-mono); font-weight: 600; font-size: 19px;
-  white-space: nowrap;
+  font-family: var(--font-mono); font-weight: 600; font-size: var(--fs-fig);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  /* No nowrap: a value can be a 36-char UUID, and pinned to one line it used
+     to run straight out of the card. `anywhere` also lets the box shrink
+     below its longest token, so flex gives it only the room that is left.
+     Short figures never reach the edge, so money still sits on one line. */
+  min-width: 0; overflow-wrap: anywhere;
 }
+/* The mono face is reserved for figures — money, IDs, phone numbers, dates.
+   A name or an email is prose and is set in the body face, or the ledger
+   stops signalling "this is a number" at all. */
+.ledger-row__value--text {
+  font-family: var(--font-body); font-weight: 500; font-size: var(--fs-base);
+}
+/* A value too long to sit on one line with its label (an email, a full name)
+   wraps under it instead of forcing the row wide. */
+.ledger-row--stack { flex-direction: column; align-items: stretch; gap: 3px; }
+.ledger-row--stack .ledger-row__leader { display: none; }
+.ledger-row--stack .ledger-row__value { text-align: left; white-space: normal; word-break: break-word; }
 
 /* — tags — */
 .tag {
-  display: inline-flex; align-items: center; gap: 4px; font-size: 16px;
-  font-family: var(--font-body); letter-spacing: 0.02em; padding: 3px 10px;
+  display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-sm);
+  font-family: var(--font-body); font-weight: 500;
+  letter-spacing: 0.02em; padding: 4px 11px; white-space: nowrap;
   border-radius: calc(var(--radius-md) * 0.75);
   transition: background-color 150ms ease, color 150ms ease;
 }
@@ -350,18 +406,18 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 /* — navigation — */
 .nav {
-  display: flex; align-items: center; gap: var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  display: flex; align-items: center; gap: var(--space-6);
+  padding: var(--space-3) var(--space-6);
   background: var(--color-surface);
   border-bottom: 2px solid var(--color-accent);
 }
 .nav-brand {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 24px; margin-right: auto;
+  font-size: var(--fs-subtitle); margin-right: auto;
 }
 .nav a {
-  color: inherit; text-decoration: none; font-size: 19px;
-  display: inline-flex; align-items: center; gap: 7px;
+  color: inherit; text-decoration: none; font-size: var(--fs-base);
+  display: inline-flex; align-items: center; gap: 8px;
   transition: color 150ms ease;
 }
 .nav a svg { color: color-mix(in srgb, var(--color-text) 55%, transparent); transition: color 150ms ease; }
@@ -369,16 +425,17 @@ textarea.input { min-height: 90px; resize: vertical; }
 .nav a:hover svg, .nav a[aria-current='page'] svg { color: var(--color-accent); }
 
 /* — tables — */
-.table { width: 100%; border-collapse: collapse; font-size: 19px; }
+.table { width: 100%; border-collapse: collapse; font-size: var(--fs-base); }
 .table th {
-  text-align: left; font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase;
+  text-align: left; font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 0.08em; text-transform: uppercase;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
-  padding: var(--space-2); border-bottom: 1px solid transparent; /* keeps layout; the row paints the fading rule */
+  padding: var(--space-2) var(--space-3); border-bottom: 1px solid transparent; /* keeps layout; the row paints the fading rule */
+  white-space: nowrap;
 }
 .table td {
-  padding: var(--space-2);
+  padding: var(--space-3);
   border-bottom: 1px solid transparent;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
 }
 .table td .tag { font-family: var(--font-body); }
 /* Row rules as row-level strips so the end-fade spans the row, not each cell. */
@@ -426,7 +483,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 .dialog-title {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
-  font-size: 26px;
+  font-size: var(--fs-subtitle);
 }
-.dialog-body { font-size: 19px; opacity: 0.85; }
+.dialog-body { font-size: var(--fs-base); opacity: 0.85; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }

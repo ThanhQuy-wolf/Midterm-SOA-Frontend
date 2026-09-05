@@ -55,73 +55,76 @@ export function TransactionResultPage() {
   const failLabel = transaction.failureReason ? FAIL_LABEL[transaction.failureReason] : "Đã hủy";
   const availableBalance = balanceQuery.data?.availableBalance;
 
-  const rows = isSuccess
+  const balanceValue = availableBalance != null ? formatVnd(availableBalance) : "—";
+  // `text: true` marks a value as prose so it stays in the body face — the
+  // mono face is what tells you a value is a figure.
+  // `stack: true` gives the value its own line under the label. The
+  // transaction id is a 36-char UUID: sharing a line with its label leaves it
+  // too little room and it wraps mid-string.
+  const rows: Array<{ label: string; value: string; text?: boolean; stack?: boolean }> = isSuccess
     ? [
-        { label: "Mã giao dịch", value: transaction.transactionId },
-        { label: "Số tiền", value: formatVnd(transaction.amountToPay) },
-        { label: "Sinh viên", value: `${transaction.studentId} — ${transaction.studentName}` },
-        { label: "Số dư còn lại", value: availableBalance != null ? formatVnd(availableBalance) : "—" },
+        { label: "Mã giao dịch", value: transaction.transactionId, stack: true },
+        { label: "Sinh viên", value: transaction.studentName, text: true },
+        { label: "Mã số sinh viên", value: transaction.studentId },
+        { label: "Số dư còn lại", value: balanceValue },
       ]
     : [
-        { label: "Mã giao dịch", value: transaction.transactionId },
-        { label: "Trạng thái", value: failLabel },
-        { label: "Sinh viên", value: `${transaction.studentId} — ${transaction.studentName}` },
-        { label: "Số dư khả dụng", value: availableBalance != null ? formatVnd(availableBalance) : "—" },
+        { label: "Mã giao dịch", value: transaction.transactionId, stack: true },
+        { label: "Lý do", value: failLabel, text: true },
+        { label: "Sinh viên", value: transaction.studentName, text: true },
+        { label: "Mã số sinh viên", value: transaction.studentId },
+        { label: "Số dư khả dụng", value: balanceValue },
       ];
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", paddingTop: "var(--space-4)", textAlign: "center" }}>
-      <div className="stamp">SCR-04</div>
-
+    <div className="result-shell">
       <div className={isSuccess ? "result-icon result-icon--success" : "result-icon result-icon--fail"}>
-        {isSuccess ? <IconCheckCircle size={44} /> : <IconXCircle size={44} />}
+        {isSuccess ? <IconCheckCircle size={40} /> : <IconXCircle size={40} />}
       </div>
 
-      <h1 style={{ fontSize: 44, lineHeight: 1.1, margin: "0 0 6px" }}>
-        {isSuccess ? "Giao dịch thành công" : "Giao dịch không thành công"}
+      <h1 className="result-title">
+        {isSuccess ? "Đã thanh toán học phí" : "Giao dịch không thành công"}
       </h1>
-      <p
-        style={{
-          margin: "0 0 var(--space-4)",
-          fontSize: 20,
-          color: "color-mix(in srgb, var(--color-text) 55%, transparent)",
-        }}
-      >
-        {isSuccess ? "Đã hoàn tất thanh toán" : "Thanh toán không thành công"}
-      </p>
 
-      <div
-        className="card elev-md"
-        style={{
-          borderLeft: `3px solid ${isSuccess ? "var(--color-accent-2)" : "var(--color-stamp)"}`,
-          textAlign: "left",
-          padding: "var(--space-4)",
-        }}
-      >
-        <div style={{ fontSize: 21, lineHeight: 1.6 }}>
-          {isSuccess ? "Học phí đã được thanh toán và ghi nhận vào lịch sử giao dịch." : fail}
-        </div>
+      {/* The receipt itself: sum first, then the line items that back it up. */}
+      <div className="card receipt elev-md">
+        <div className="stamp receipt__seal">SCR-04</div>
 
-        <div className="stagger-in" style={{ marginTop: "var(--space-2)" }}>
+        {isSuccess ? (
+          <div className="receipt__sum">
+            <div className="meta">Số tiền đã thu</div>
+            <div className="fig fig-hero" style={{ color: "var(--color-accent-2)", marginTop: 4 }}>
+              {formatVnd(transaction.amountToPay)}
+            </div>
+          </div>
+        ) : (
+          <p className="receipt__reason">{fail}</p>
+        )}
+
+        <hr className="perf" />
+
+        <div className="stagger-in">
           {rows.map((row) => (
-            <div key={row.label} className="ledger-row">
+            <div key={row.label} className={row.stack ? "ledger-row ledger-row--stack" : "ledger-row"}>
               <span className="ledger-row__label">{row.label}</span>
               <span className="ledger-row__leader" />
-              <span className="ledger-row__value">{row.value}</span>
+              <span className={row.text ? "ledger-row__value ledger-row__value--text" : "ledger-row__value"}>
+                {row.value}
+              </span>
             </div>
           ))}
         </div>
+      </div>
 
-        <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
-          <button type="button" className="btn btn-primary" onClick={() => navigate("/payment")}>
-            <IconCreditCard size={21} />
-            Về trang chủ
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => navigate("/history")}>
-            <IconHistory size={21} />
-            Xem lịch sử giao dịch
-          </button>
-        </div>
+      <div className="result-actions">
+        <button type="button" className="btn btn-primary" onClick={() => navigate("/payment")}>
+          <IconCreditCard size={19} />
+          Thanh toán khoản khác
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={() => navigate("/history")}>
+          <IconHistory size={19} />
+          Xem lịch sử giao dịch
+        </button>
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { getTransactionHistory } from "../api/history";
 import type { PaymentHistoryStatus } from "../types/domain";
 import { formatDateTime, formatVnd } from "../utils/format";
 import {
   IconCheckCircle,
   IconClock,
-  IconHistory,
+  IconCreditCard,
   IconInbox,
   IconXCircle,
 } from "../components/icons";
@@ -28,80 +29,62 @@ export function TransactionHistoryPage() {
 
   return (
     <div>
-      <div className="stamp">SCR-05</div>
-      <h1 style={{ fontSize: 44, lineHeight: 1.1, margin: "0 0 6px", display: "flex", alignItems: "center", gap: 10 }}>
-        <IconHistory size={38} />
-        Lịch sử giao dịch
-      </h1>
-      <p
-        style={{
-          margin: "0 0 var(--space-6)",
-          fontSize: 20,
-          color: "color-mix(in srgb, var(--color-text) 55%, transparent)",
-        }}
-      >
-        Danh sách giao dịch, mới nhất trước
-      </p>
+      <div className="page-head">
+        <div>
+          <h1>Lịch sử giao dịch</h1>
+          <p className="page-head__sub">Mọi giao dịch học phí của bạn, mới nhất trước.</p>
+        </div>
+        <div className="stamp">SCR-05</div>
+      </div>
 
       {history.length === 0 ? (
-        <div
-          className="page-enter"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 10,
-            textAlign: "center",
-            fontSize: 21,
-            color: "color-mix(in srgb, var(--color-text) 50%, transparent)",
-            padding: "calc(var(--space-8) * 2) 0",
-          }}
-        >
-          <IconInbox size={46} style={{ opacity: 0.6 }} />
-          <div>Chưa có giao dịch nào.</div>
+        <div className="empty page-enter">
+          <IconInbox size={40} />
+          <p className="empty__title">Chưa có giao dịch nào</p>
+          <p className="empty__body">
+            Giao dịch sẽ xuất hiện ở đây ngay sau khi bạn đóng học phí lần đầu.
+          </p>
+          <Link to="/payment" className="btn btn-primary">
+            <IconCreditCard size={19} />
+            Thanh toán học phí
+          </Link>
         </div>
       ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Thời gian</th>
-              <th>Mã giao dịch</th>
-              <th style={{ textAlign: "right", paddingRight: "calc(var(--space-8) * 2)" }}>Số tiền</th>
-              <th>Trạng thái</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((row) => {
-              const [label, tagClass, StatusIcon] = STATUS_LABEL[row.status];
-              return (
-                <tr key={row.id}>
-                  <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</td>
-                  <td style={{ fontWeight: 600 }}>{row.id}</td>
-                  <td style={{ textAlign: "right", paddingRight: "calc(var(--space-8) * 2)", fontWeight: 600 }}>
-                    {formatVnd(row.amount)}
-                  </td>
-                  <td>
-                    <span className={tagClass}>
-                      <StatusIcon size={17} />
-                      {label}
-                    </span>
-                    {row.status === "FAILED" && row.errorMessage && (
-                      <div
-                        style={{
-                          fontSize: 15,
-                          marginTop: 3,
-                          color: "color-mix(in srgb, var(--color-text) 50%, transparent)",
-                        }}
-                      >
-                        {row.errorMessage}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="table-wrap">
+          <table className="table history-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Mã giao dịch</th>
+                <th className="col-amount">Số tiền</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((row) => {
+                const [label, tagClass, StatusIcon] = STATUS_LABEL[row.status];
+                return (
+                  <tr key={row.id}>
+                    <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</td>
+                    <td>{row.id}</td>
+                    <td className="col-amount" style={{ fontWeight: 600 }}>
+                      {formatVnd(row.amount)}
+                    </td>
+                    <td>
+                      <span className={tagClass}>
+                        <StatusIcon size={15} />
+                        {label}
+                      </span>
+                      {row.status === "FAILED" && row.errorMessage && (
+                        <div className="history-error">{row.errorMessage}</div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
