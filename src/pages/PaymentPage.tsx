@@ -1,20 +1,26 @@
-import { useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { getAvailableBalance, lookupTuitionByStudentId } from "../api/tuition";
 import { initiateTransaction } from "../api/transaction";
-import { getApiErrorMessage } from "../api/client";
-import { formatVnd } from "../utils/format";
+import { getApiErrorMessage, getApiErrorRetryAfterSeconds, getApiErrorStatus } from "../api/client";
+import { formatDuration, formatVnd } from "../utils/format";
 import {
   IconAlertCircle,
   IconAlertTriangle,
   IconBanknote,
   IconCheckCircle,
+  IconClock,
   IconIdCard,
   IconWallet,
 } from "../components/icons";
+
+// Màn OTP đẩy người dùng về đây khi giao dịch cũ hết lượt thử (HTTP 429).
+interface PaymentLocationState {
+  notice?: { kind: "otp-locked"; retryAfterSeconds?: number };
+}
 
 function Row({ label, children, stack, text }: {
   label: string;
@@ -37,11 +43,34 @@ function Row({ label, children, stack, text }: {
 
 export function PaymentPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { payer } = useAuth();
   const [studentId, setStudentId] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const debouncedStudentId = useDebouncedValue(studentId.trim());
+
+  // Giữ thông báo "hết lượt thử OTP" vào state cục bộ rồi xoá khỏi history ngay,
+  // để F5 hoặc quay lại trang không làm nó hiện lại như một sự kiện vừa xảy ra.
+  const [lockNotice] = useState(() => (location.state as PaymentLocationState | null)?.notice ?? null);
+  useEffect(() => {
+    if (location.state) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Rate limit gửi OTP (429 ở /payments/initiate). Backend cho biết phải chờ bao
+  // lâu qua retryAfterSeconds, nên hiển thị đếm ngược thật thay vì câu tĩnh.
+  const [retryAt, setRetryAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (retryAt === null || now >= retryAt) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [retryAt, now]);
+  const retryMsLeft = retryAt === null ? 0 : Math.max(0, retryAt - now);
+  const rateLimited = retryMsLeft > 0;
 
   const balanceQuery = useQuery({
     queryKey: ["balance"],
@@ -61,6 +90,16 @@ export function PaymentPage() {
     onSuccess: (transaction) => {
       navigate("/otp", { state: { transaction } });
     },
+    onError: (error) => {
+      // 429 ở initiate = vượt hạn mức gửi OTP theo giờ. Khoá nút cho tới khi
+      // hết thời gian chờ backend chỉ định, thay vì để người dùng bấm lại vô ích.
+      if (getApiErrorStatus(error) !== 429) return;
+      const seconds = getApiErrorRetryAfterSeconds(error);
+      if (seconds !== undefined) {
+        setNow(Date.now());
+        setRetryAt(Date.now() + seconds * 1000);
+      }
+    },
   });
 
   const tuition = tuitionQuery.data;
@@ -70,12 +109,13 @@ export function PaymentPage() {
   const unpaid = found && tuition.tuitionStatus === "UNPAID";
   const availableBalance = balanceQuery.data?.availableBalance ?? 0;
   const enoughBalance = unpaid && availableBalance >= tuition.tuitionAmount;
-  const canConfirm = enoughBalance && agreedToTerms && !initiateMutation.isPending;
+  const canConfirm = enoughBalance && agreedToTerms && !rateLimited && !initiateMutation.isPending;
 
   let confirmHint = "";
   if (!found) confirmHint = "Nhập MSSV hợp lệ để tiếp tục.";
   else if (!unpaid) confirmHint = "Khoản học phí đã được thanh toán.";
   else if (!enoughBalance) confirmHint = "Số dư khả dụng không đủ.";
+  else if (rateLimited) confirmHint = `Thử lại sau ${formatDuration(retryMsLeft / 1000)}.`;
   else if (!agreedToTerms) confirmHint = "Cần đồng ý điều khoản.";
 
   function handleConfirm() {
@@ -105,6 +145,18 @@ export function PaymentPage() {
         </div>
         <div className="stamp">SCR-02</div>
       </div>
+
+      {lockNotice?.kind === "otp-locked" && (
+        <div className="notice notice--warn payment-banner" role="alert">
+          <IconAlertTriangle size={19} />
+          <div>
+            Giao dịch trước đã dùng hết lượt thử OTP và không tiếp tục được. Hãy tạo giao dịch mới bên
+            dưới.
+            {lockNotice.retryAfterSeconds !== undefined &&
+              ` Nếu vẫn bị chặn, thử lại sau ${formatDuration(lockNotice.retryAfterSeconds)}.`}
+          </div>
+        </div>
+      )}
 
       <div className="payment-grid">
         <div className="payment-form">
@@ -246,14 +298,26 @@ export function PaymentPage() {
                   <span>Tôi đồng ý với điều khoản giao dịch và xác nhận thông tin trên là chính xác.</span>
                 </label>
 
-                {initiateMutation.isError && (
+                {/* Khi bị chặn theo hạn mức, đếm ngược tự nó là thông tin hữu
+                    ích nhất — nó thay cho câu "vui lòng thử lại sau" không số. */}
+                {rateLimited ? (
                   <div className="notice notice--warn" role="alert">
-                    <IconAlertCircle size={19} />
+                    <IconClock size={19} />
                     <div>
-                      {getApiErrorMessage(initiateMutation.error) ??
-                        "Không tạo được giao dịch. Thử lại sau ít phút."}
+                      Bạn đã gửi quá nhiều yêu cầu OTP. Thử lại sau{" "}
+                      <span className="fig">{formatDuration(retryMsLeft / 1000)}</span>.
                     </div>
                   </div>
+                ) : (
+                  initiateMutation.isError && (
+                    <div className="notice notice--warn" role="alert">
+                      <IconAlertCircle size={19} />
+                      <div>
+                        {getApiErrorMessage(initiateMutation.error) ??
+                          "Không tạo được giao dịch. Thử lại sau ít phút."}
+                      </div>
+                    </div>
+                  )
                 )}
               </>
             )}

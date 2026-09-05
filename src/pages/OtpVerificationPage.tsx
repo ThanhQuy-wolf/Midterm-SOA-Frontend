@@ -75,6 +75,23 @@ export function OtpVerificationPage() {
   const verifyMutation = useMutation({
     mutationFn: (code: string) => verifyOtp(transaction!, code),
     onSuccess: (updated) => {
+      // Hết lượt thử (429): giao dịch này không verify lại được nữa dù OTP còn
+      // hạn, nên đưa thẳng người dùng về bước tạo giao dịch thay vì màn kết quả
+      // — ở đó chỉ có nút quay lại, thêm một bước thừa.
+      if (updated.status === "FAILED" && updated.failureReason === "OTP_LOCKED") {
+        queryClient.invalidateQueries({ queryKey: ["balance"] });
+        queryClient.invalidateQueries({ queryKey: ["history"] });
+        navigate("/payment", {
+          replace: true,
+          state: {
+            notice: {
+              kind: "otp-locked",
+              retryAfterSeconds: updated.retryAfterSeconds,
+            },
+          },
+        });
+        return;
+      }
       if (updated.status === "COMPLETED" || updated.status === "FAILED") {
         queryClient.invalidateQueries({ queryKey: ["balance"] });
         queryClient.invalidateQueries({ queryKey: ["history"] });
@@ -88,7 +105,11 @@ export function OtpVerificationPage() {
       setTransaction(updated);
       setOtpInput("");
       // Số lần thử còn lại đã hiển thị ngay dưới ô nhập — không lặp lại ở đây.
-      setMessage("Mã OTP không đúng. Nhập lại mã mới nhất trong email.");
+      setMessage(
+        updated.attemptsLeft === 0
+          ? "Mã OTP không đúng. Bạn đã dùng hết lượt thử cho giao dịch này."
+          : "Mã OTP không đúng. Nhập lại mã mới nhất trong email.",
+      );
     },
   });
 
@@ -146,9 +167,14 @@ export function OtpVerificationPage() {
   const running = isLive && !timedOut;
   const urgent = running && deadline - now <= 30000;
   const expired = transaction.status === "EXPIRED" || timedOut;
-  const disabledInput = !isLive || timedOut || verifyMutation.isPending;
+  // Backend chỉ nói số lần còn lại sau lần sai đầu tiên — trước đó là undefined
+  // và ta không hiển thị gì, thay vì đoán một con số.
+  const attemptsLeft = transaction.attemptsLeft;
+  // Hết lượt: theo contract, lần bấm tiếp theo chắc chắn nhận 429. Khoá form
+  // ngay tại đây thay vì bắt người dùng bấm thêm một lần mới báo lỗi.
+  const outOfAttempts = attemptsLeft === 0;
+  const disabledInput = !isLive || timedOut || outOfAttempts || verifyMutation.isPending;
   const displayMessage = expired ? FAIL_MSG_OTP_EXPIRED : message;
-  const attemptsLeft = transaction.attemptsLeft ?? 0;
 
   return (
     <div className="otp-shell">
@@ -208,9 +234,12 @@ export function OtpVerificationPage() {
             ))}
           </div>
 
-          <div className="meta otp-block__foot">
-            {expired ? "Không còn lượt thử." : `Còn ${attemptsLeft} lần thử.`}
-          </div>
+          {/* Chỉ nói về lượt thử khi backend đã cho biết con số. */}
+          {(expired || attemptsLeft !== undefined) && (
+            <div className="meta otp-block__foot">
+              {expired || outOfAttempts ? "Không còn lượt thử." : `Còn ${attemptsLeft} lần thử.`}
+            </div>
+          )}
         </div>
 
         {displayMessage && (
@@ -232,13 +261,13 @@ export function OtpVerificationPage() {
           </div>
         )}
 
-        {expired ? (
+        {expired || outOfAttempts ? (
           <button
             type="button"
             className="btn btn-primary btn-block"
             onClick={() => navigate("/payment", { replace: true })}
           >
-            Quay lại trang thanh toán
+            {outOfAttempts ? "Tạo giao dịch mới" : "Quay lại trang thanh toán"}
           </button>
         ) : (
           <div className="otp-actions">
@@ -246,7 +275,7 @@ export function OtpVerificationPage() {
               type="button"
               className="btn btn-primary"
               onClick={() => verifyMutation.mutate(otpInput)}
-              disabled={!isLive || timedOut || verifyMutation.isPending || otpInput.length !== 6}
+              disabled={disabledInput || otpInput.length !== 6}
             >
               {!verifyMutation.isPending && <IconCheckCircle size={19} />}
               {verifyMutation.isPending ? "Đang xác thực…" : "Xác nhận"}

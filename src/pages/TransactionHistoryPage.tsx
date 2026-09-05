@@ -12,6 +12,9 @@ import {
 } from "../components/icons";
 import type { ComponentType } from "react";
 
+// Trạng thái lấy thẳng từ backend. Giao dịch hết lượt thử OTP giờ được
+// payment-service ghi FAILED kèm errorMessage giải thích, nên dòng đó tự hiện
+// "Thất bại" + lý do — FE không cần suy đoán hay tự nhớ gì thêm.
 const STATUS_LABEL: Record<PaymentHistoryStatus, [string, string, ComponentType<{ size?: number }>]> = {
   PENDING: ["Chờ xác thực OTP", "tag tag-neutral", IconClock],
   PROCESSING: ["Đang xử lý", "tag tag-neutral", IconClock],
@@ -63,6 +66,7 @@ export function TransactionHistoryPage() {
             <tbody>
               {history.map((row) => {
                 const [label, tagClass, StatusIcon] = STATUS_LABEL[row.status];
+                const detail = row.status === "FAILED" ? row.errorMessage : null;
                 return (
                   <tr key={row.id}>
                     <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</td>
@@ -75,9 +79,7 @@ export function TransactionHistoryPage() {
                         <StatusIcon size={15} />
                         {label}
                       </span>
-                      {row.status === "FAILED" && row.errorMessage && (
-                        <div className="history-error">{row.errorMessage}</div>
-                      )}
+                      {detail && <div className="history-error">{detail}</div>}
                     </td>
                   </tr>
                 );

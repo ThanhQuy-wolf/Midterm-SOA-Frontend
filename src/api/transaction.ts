@@ -1,9 +1,17 @@
-import { apiClient, getApiErrorMessage, getApiErrorStatus } from "./client";
+import {
+  apiClient,
+  getApiErrorMessage,
+  getApiErrorRemainingAttempts,
+  getApiErrorRetryAfterSeconds,
+  getApiErrorStatus,
+} from "./client";
 import { maskEmail } from "../utils/format";
 import type { Payer, Transaction, TransactionFailureReason } from "../types/domain";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
-const MAX_OTP_ATTEMPTS = 5;
+// Không có hằng số MAX_OTP_ATTEMPTS ở FE: giới hạn số lần thử là quy tắc bảo mật
+// chống brute-force nên backend là nguồn sự thật duy nhất. FE chỉ hiển thị lại
+// remainingAttempts mà mỗi response 409 trả về, không tự đếm.
 
 // Response thật của POST /api/payments/initiate.
 interface InitiateApiResponse {
@@ -24,7 +32,9 @@ function storedPayerEmail(): string {
 
 // SCR-02 -> SCR-03: bấm "Xác nhận giao dịch". Backend tạo giao dịch PENDING + gửi OTP về email.
 // Backend chỉ trả { transactionId, amount, balance } nên FE tự dựng phần còn lại của Transaction
-// (studentName lấy từ kết quả tra cứu, hạn OTP = now + 5 phút, số lần thử = 5).
+// (studentName lấy từ kết quả tra cứu, hạn OTP = now + 5 phút). attemptsLeft để trống: response
+// initiate không nói số lần thử, và FE không được đoán — con số đầu tiên đến từ lần sai đầu tiên.
+// Có thể ném lỗi 429 kèm retryAfterSeconds khi vượt hạn mức gửi OTP theo giờ.
 export async function initiateTransaction(input: {
   studentId: string;
   studentName: string;
@@ -43,7 +53,6 @@ export async function initiateTransaction(input: {
     createdAt: new Date(now).toISOString(),
     maskedEmail: email ? maskEmail(email) : undefined,
     otpExpiresAt: new Date(now + OTP_TTL_MS).toISOString(),
-    attemptsLeft: MAX_OTP_ATTEMPTS,
   };
 }
 
@@ -61,8 +70,9 @@ function classifyVerifyError(error: unknown): {
   // NHẤT còn thử lại được — mọi 409 khác đều nghĩa là saga đã hoàn tiền và ghi
   // giao dịch thành FAILED trong DB, không được trừ lượt rồi cho gõ tiếp.
 
-  // Hết lượt thử: backend trả riêng 429 cho ca này nên mã HTTP đủ tin cậy.
-  if (status === 429 || /quá nhiều lần|quá số lần|too many|maximum/.test(message)) {
+  // 429 và ca "sai OTP" đã được verifyOtp xử lý trước bằng mã HTTP và
+  // remainingAttempts; ở đây chỉ còn là lưới dự phòng theo chuỗi.
+  if (/quá nhiều lần|quá số lần|too many|maximum/.test(message)) {
     return { failureReason: "OTP_LOCKED", locked: true, expired: false };
   }
   // Giao dịch không tồn tại (404) hoặc không thuộc người đang đăng nhập (403).
@@ -101,13 +111,12 @@ function classifyVerifyError(error: unknown): {
   return { locked: false, expired: false };
 }
 
-// SCR-03: xác thực OTP. Backend trả chuỗi "Payment successful" khi thành công, hoặc 400 khi lỗi.
-// FE giữ nguyên state machine cũ bằng cách suy diễn trạng thái từ kết quả:
-//  - thành công        -> COMPLETED
-//  - OTP hết hạn        -> EXPIRED (OTP_EXPIRED)
-//  - hết số lần thử     -> FAILED (OTP_LOCKED)
-//  - học phí đã đóng    -> FAILED (TUITION_ALREADY_PAID)
-//  - OTP sai (còn lượt) -> OTP_SENT, attemptsLeft giảm 1 (đếm phía client vì backend không trả về)
+// SCR-03: xác thực OTP. Trạng thái được suy ra từ kết quả gọi API:
+//  - thành công         -> COMPLETED
+//  - 429                -> FAILED (OTP_LOCKED) + retryAfterSeconds; giao dịch chết hẳn
+//  - 409 + remainingAttempts -> OTP_SENT, attemptsLeft = con số backend trả về
+//  - OTP hết hạn         -> EXPIRED (OTP_EXPIRED)
+//  - học phí đã đóng     -> FAILED (TUITION_ALREADY_PAID)
 export async function verifyOtp(transaction: Transaction, otp: string): Promise<Transaction> {
   try {
     await apiClient.post("/payments/verify-otp", {
@@ -126,6 +135,29 @@ export async function verifyOtp(transaction: Transaction, otp: string): Promise<
     if (status >= 500) {
       throw error;
     }
+
+    // 429 = hết lượt thử OTP (theo giao dịch hoặc theo giờ/user). Giao dịch này
+    // không verify lại được nữa kể cả khi OTP còn hạn -> phải tạo giao dịch mới.
+    if (status === 429) {
+      return {
+        ...transaction,
+        status: "FAILED",
+        failureReason: "OTP_LOCKED",
+        attemptsLeft: 0,
+        retryAfterSeconds: getApiErrorRetryAfterSeconds(error),
+      };
+    }
+
+    // Chỉ ca "sai OTP" mới kèm remainingAttempts (InvalidOtpException -> 409),
+    // nên sự có mặt của field này là dấu hiệu tin cậy — không cần dò chuỗi
+    // tiếng Việt. Con số lấy nguyên từ backend, FE không tự trừ.
+    // Khi về 0, backend đã ghi giao dịch thành FAILED và xoá OTP key, nên lịch
+    // sử tự phản ánh đúng — FE không cần nhớ gì thêm.
+    const remainingAttempts = getApiErrorRemainingAttempts(error);
+    if (remainingAttempts !== undefined) {
+      return { ...transaction, status: "OTP_SENT", attemptsLeft: remainingAttempts };
+    }
+
     const { failureReason, locked, expired } = classifyVerifyError(error);
 
     if (expired) {
@@ -140,10 +172,8 @@ export async function verifyOtp(transaction: Transaction, otp: string): Promise<
       };
     }
 
-    const attemptsLeft = Math.max((transaction.attemptsLeft ?? MAX_OTP_ATTEMPTS) - 1, 0);
-    if (attemptsLeft <= 0) {
-      return { ...transaction, status: "FAILED", failureReason: "OTP_LOCKED", attemptsLeft: 0 };
-    }
-    return { ...transaction, status: "OTP_SENT", attemptsLeft };
+    // Dự phòng: backend lẽ ra luôn kèm remainingAttempts cho ca sai OTP. Nếu
+    // thiếu, giữ nguyên trạng thái và để người dùng thử lại thay vì đoán số lần.
+    return { ...transaction, status: "OTP_SENT" };
   }
 }

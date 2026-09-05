@@ -196,6 +196,10 @@ a:hover {
    is the slip and not the questionnaire.
    ══════════════════════════════════════════════════════════════════ */
 
+/* Băng thông báo trải hết bề ngang, phía trên lưới form — chuyện vừa xảy ra
+   với giao dịch trước không thuộc riêng cột nào. */
+.payment-banner { margin-bottom: var(--space-6); }
+
 .payment-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px;

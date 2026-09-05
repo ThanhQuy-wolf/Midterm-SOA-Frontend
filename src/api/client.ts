@@ -49,3 +49,26 @@ export function getApiErrorMessage(error: unknown): string | undefined {
 export function getApiErrorStatus(error: unknown): number | undefined {
   return isAxiosError(error) ? error.response?.status : undefined;
 }
+
+// Payment-service kèm số liệu ở hai loại lỗi của luồng OTP (xem docs/API-FRONTEND.md):
+//   409 sai OTP -> remainingAttempts
+//   429 bị chặn -> retryAfterSeconds (+ header Retry-After)
+// Các lỗi khác chỉ có message, nên hai hàm này trả undefined — sự CÓ MẶT của
+// field chính là tín hiệu phân biệt, đáng tin hơn hẳn việc dò chuỗi tiếng Việt.
+
+export function getApiErrorRemainingAttempts(error: unknown): number | undefined {
+  if (!isAxiosError(error)) return undefined;
+  const raw = (error.response?.data as { remainingAttempts?: unknown } | undefined)?.remainingAttempts;
+  return typeof raw === "number" && Number.isFinite(raw) ? Math.max(0, Math.trunc(raw)) : undefined;
+}
+
+export function getApiErrorRetryAfterSeconds(error: unknown): number | undefined {
+  if (!isAxiosError(error)) return undefined;
+  const raw = (error.response?.data as { retryAfterSeconds?: unknown } | undefined)?.retryAfterSeconds;
+  if (typeof raw === "number" && Number.isFinite(raw)) return Math.max(0, Math.trunc(raw));
+  // Dự phòng bằng header. Lưu ý: trình duyệt CHỈ đọc được Retry-After khi server
+  // liệt kê nó trong Access-Control-Expose-Headers — nếu thiếu, chỉ còn field body.
+  const header = error.response?.headers?.["retry-after"];
+  const parsed = typeof header === "string" ? Number.parseInt(header, 10) : Number.NaN;
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : undefined;
+}

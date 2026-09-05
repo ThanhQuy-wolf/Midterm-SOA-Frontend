@@ -43,7 +43,11 @@ export interface Transaction {
   // Chỉ có giá trị khi status === "OTP_SENT".
   maskedEmail?: string;
   otpExpiresAt?: string;
+  // Số lần thử OTP còn lại, do backend trả về (remainingAttempts) chứ FE không
+  // tự đếm. Chưa xác định cho tới lần nhập sai đầu tiên, nên có thể undefined.
   attemptsLeft?: number;
+  // Chỉ có khi bị rate limit (HTTP 429): số giây phải chờ trước khi thử lại.
+  retryAfterSeconds?: number;
 }
 
 // Response thật của GET /api/payments/history — độc lập với Transaction/TransactionStatus
