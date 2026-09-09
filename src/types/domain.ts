@@ -57,6 +57,10 @@ export type PaymentHistoryStatus = "PENDING" | "PROCESSING" | "SUCCESS" | "FAILE
 export interface TransactionHistoryItem {
   id: string;
   tuitionId: string;
+  // Snapshot payment-service lưu lúc initiate. Null với giao dịch tạo trước khi
+  // backend bổ sung hai field này — bảng lịch sử fallback về mã giao dịch.
+  mssv: string | null;
+  studentName: string | null;
   amount: number;
   status: PaymentHistoryStatus;
   errorMessage: string | null;

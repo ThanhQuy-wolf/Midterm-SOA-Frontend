@@ -58,6 +58,7 @@ export function TransactionHistoryPage() {
             <thead>
               <tr>
                 <th>Thời gian</th>
+                <th>Sinh viên</th>
                 <th>Mã giao dịch</th>
                 <th className="col-amount">Số tiền</th>
                 <th>Trạng thái</th>
@@ -70,6 +71,16 @@ export function TransactionHistoryPage() {
                 return (
                   <tr key={row.id}>
                     <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</td>
+                    <td>
+                      {row.studentName ? (
+                        <>
+                          <div style={{ fontWeight: 600 }}>{row.studentName}</div>
+                          {row.mssv && <div className="history-sub">{row.mssv}</div>}
+                        </>
+                      ) : (
+                        <span className="history-sub">Không có thông tin</span>
+                      )}
+                    </td>
                     <td>{row.id}</td>
                     <td className="col-amount" style={{ fontWeight: 600 }}>
                       {formatVnd(row.amount)}

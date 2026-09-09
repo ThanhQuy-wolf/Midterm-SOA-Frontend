@@ -189,6 +189,8 @@ Response `200`, sắp xếp theo `createdAt` giảm dần (mới nhất trước
   {
     "id": "a1b2c3d4-...-uuid",
     "tuitionId": "22222222-...-uuid",
+    "mssv": "524H0001",
+    "studentName": "Tran Huu Danh",
     "amount": 8500000,
     "status": "SUCCESS",
     "errorMessage": null,
@@ -197,7 +199,8 @@ Response `200`, sắp xếp theo `createdAt` giảm dần (mới nhất trước
   }
 ]
 ```
-- `tuitionId`: UUID khoản học phí — dùng `GET /api/tuition/id/{tuitionId}` nếu cần tra thêm MSSV/tên SV (FE hiện không gọi, chỉ hiển thị id giao dịch).
+- `tuitionId`: UUID khoản học phí — dùng `GET /api/tuition/id/{tuitionId}` nếu cần tra thêm chi tiết (kỳ, hạn đóng). FE không gọi.
+- `mssv`, `studentName` *(thêm 2026-09-09)*: payment-service chụp lại lúc `initiate` từ `GET /api/tuition/{mssv}` và lưu vào bảng `transactions` — không phải join lúc đọc, nên lịch sử giữ đúng tên tại thời điểm giao dịch. **Có thể `null`** với các giao dịch tạo trước ngày này; FE fallback về mã giao dịch.
 - `status`: `PENDING` (vừa khởi tạo, chờ OTP) · `PROCESSING` (đang trừ tiền, tạm thời) · `SUCCESS` · `FAILED` (thất bại hoặc bị huỷ — xem `errorMessage`).
 - `errorMessage`: chỉ có giá trị khi `status = FAILED`.
 
