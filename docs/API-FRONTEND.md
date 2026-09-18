@@ -153,9 +153,9 @@ Bắt đầu thanh toán học phí cho 1 MSSV. Hệ thống kiểm tra học ph
 
 Request:
 ```json
-{ "mssv": "524H0088" }
+{ "mssv": "524H0001" }
 ```
-> `mssv` phải đúng định dạng `3 số + 1 chữ + 4 số`, VD `524H0088`. Có thể đóng hộ MSSV khác với tài khoản MSSV mình.
+> `mssv` phải đúng định dạng `3 số + 1 chữ + 4 số`, VD `524H0001`. Có thể đóng hộ MSSV khác với tài khoản MSSV mình.
 
 Response `200`:
 ```json
@@ -208,14 +208,26 @@ Response `200`, sắp xếp theo `createdAt` giảm dần (mới nhất trước
 
 ## Tài khoản & dữ liệu demo có sẵn
 
-| Username | Password | Số dư | Ghi chú |
+| Username | Password | Số dư ban đầu | Ghi chú |
 |---|---|---|---|
-| `524h0088` | `123456` | 100.000.000 | Học phí HK1-2526 = 8.500.000 chưa đóng → demo thanh toán thành công |
-| `524h0456` | `123456` | 15.000.000 | Học phí = 20.000.000 chưa đóng → demo lỗi thiếu số dư |
+| `524h0088` | `123456` | 100.000.000 | Đủ tiền cho mọi khoản demo → chạy happy path |
+| `524h0456` | `123456` | 15.000.000 | Ít hơn học phí của `524H0004` (20.000.000) → demo lỗi thiếu số dư |
 
-MSSV khác để tra cứu (không có tài khoản đăng nhập riêng, chỉ dùng để test GET/initiate hộ):
-- `524H0123` — đã đóng hết học phí → test case "không còn khoản chưa đóng" (`404`)
-- `524H0100`, `524H0789` — nợ nhiều học kỳ → test `/all` trả nhiều dòng, `/{mssv}` trả đúng kỳ sớm nhất
+**Username KHÔNG phải MSSV.** Sinh viên để tra cứu là 5 mã dưới đây, seed ở
+`Backend-midterm/tuition-service/src/main/resources/data.sql`:
+
+| MSSV | Sinh viên | Học phí chưa đóng | Dùng để test |
+|---|---|---|---|
+| `524H0001` | Tran Huu Danh | HK1-2526 = 8.500.000 | happy path |
+| `524H0002` | Ta Nguyen Thanh Quy | HK2-2425 = 5.000.000 **và** HK1-2526 = 9.200.000 | `/all` trả nhiều dòng; `/{mssv}` trả kỳ cũ trước |
+| `524H0003` | Le Minh Anh | (đã đóng hết) | `404` "không còn khoản chưa đóng" |
+| `524H0004` | Pham Thi Mai | HK1-2526 = 20.000.000 | thiếu số dư với `524h0456` |
+| `524H0005` | Vo Quoc Bao | HK1-2526 = 6.500.000 (HK2-2425 đã đóng) | `/{mssv}` trả đúng kỳ còn nợ |
+
+> Số dư và cột "chưa đóng" ở trên là **trạng thái seed ban đầu**. Volume Postgres
+> được giữ qua các lần `docker compose up`, nên sau khi demo/test thật thì số dư đã
+> bị trừ và một số khoản đã chuyển sang đã đóng — tra cứu lại bằng
+> `GET /api/tuition/{mssv}/all` thay vì tin bảng này.
 
 Email OTP dùng tài khoản Gmail thật đã cấu hình sẵn ở backend — OTP sẽ được gửi vào hộp thư của user đang đăng nhập khi gọi `initiate`.
 

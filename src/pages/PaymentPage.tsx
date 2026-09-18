@@ -78,10 +78,17 @@ export function PaymentPage() {
     refetchOnMount: "always",
   });
 
+  // Contract: MSSV là 3 số + 1 chữ + 4 số (VD 524H0001). Backend trả 404 cho cả mã
+  // sai định dạng lẫn mã không tồn tại, nên nếu để query chạy thì người dùng gõ
+  // "abc123" cũng chỉ thấy "không tìm thấy sinh viên" — sai nguyên nhân. Chặn ở đây
+  // để báo đúng lỗi định dạng và khỏi bắn 2 request rác lên gateway.
+  const malformedStudentId =
+    debouncedStudentId.length > 0 && !/^\d{3}[A-Za-z]\d{4}$/.test(debouncedStudentId);
+
   const tuitionQuery = useQuery({
     queryKey: ["tuition-lookup", debouncedStudentId],
     queryFn: () => lookupTuitionByStudentId(debouncedStudentId),
-    enabled: debouncedStudentId.length > 0,
+    enabled: debouncedStudentId.length > 0 && !malformedStudentId,
     retry: false,
   });
 
@@ -112,7 +119,8 @@ export function PaymentPage() {
   const canConfirm = enoughBalance && agreedToTerms && !rateLimited && !initiateMutation.isPending;
 
   let confirmHint = "";
-  if (!found) confirmHint = "Nhập MSSV hợp lệ để tiếp tục.";
+  if (malformedStudentId) confirmHint = "MSSV phải gồm 3 số, 1 chữ cái rồi 4 số (VD 524H0001).";
+  else if (!found) confirmHint = "Nhập MSSV hợp lệ để tiếp tục.";
   else if (!unpaid) confirmHint = "Khoản học phí đã được thanh toán.";
   else if (!enoughBalance) confirmHint = "Số dư khả dụng không đủ.";
   else if (rateLimited) confirmHint = `Thử lại sau ${formatDuration(retryMsLeft / 1000)}.`;
@@ -208,7 +216,14 @@ export function PaymentPage() {
               <div className="meta pulse">Đang tra cứu…</div>
             )}
 
-            {notFound && !isLoadingLookup && (
+            {malformedStudentId && (
+              <div className="notice notice--warn otp-shake" role="alert">
+                <IconAlertCircle size={19} />
+                <div>MSSV phải gồm 3 số, 1 chữ cái rồi 4 số — ví dụ 524H0001.</div>
+              </div>
+            )}
+
+            {notFound && !isLoadingLookup && !malformedStudentId && (
               <div className="notice notice--warn otp-shake" role="alert">
                 <IconAlertCircle size={19} />
                 <div>Không tìm thấy sinh viên nào mang mã này. Kiểm tra lại MSSV.</div>
