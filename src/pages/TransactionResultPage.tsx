@@ -56,11 +56,9 @@ export function TransactionResultPage() {
   const availableBalance = balanceQuery.data?.availableBalance;
 
   const balanceValue = availableBalance != null ? formatVnd(availableBalance) : "—";
-  // `text: true` marks a value as prose so it stays in the body face — the
-  // mono face is what tells you a value is a figure.
-  // `stack: true` gives the value its own line under the label. The
-  // transaction id is a 36-char UUID: sharing a line with its label leaves it
-  // too little room and it wraps mid-string.
+  // `text: true` giữ giá trị ở font body vì đó là chữ; font mono dành cho con số.
+  // `stack: true` đẩy giá trị xuống dòng riêng dưới nhãn — mã giao dịch là UUID 36
+  // ký tự, để chung dòng với nhãn thì bị ngắt giữa chuỗi.
   const rows: Array<{ label: string; value: string; text?: boolean; stack?: boolean }> = isSuccess
     ? [
         { label: "Mã giao dịch", value: transaction.transactionId, stack: true },

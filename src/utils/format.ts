@@ -17,6 +17,13 @@ export function formatDuration(seconds: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
+// Rút gọn mã giao dịch UUID (36 ký tự) để hiển thị trong bảng, tránh xuống
+// hàng làm vỡ layout. Mã đầy đủ vẫn xem được qua tooltip (title).
+export function shortenId(id: string): string {
+  if (id.length <= 13) return id;
+  return `${id.slice(0, 8)}…${id.slice(-4)}`;
+}
+
 export function formatDateTime(isoString: string): string {
   const d = new Date(isoString);
   const pad = (n: number) => String(n).padStart(2, "0");

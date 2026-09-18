@@ -23,7 +23,7 @@ function toLookupResult(t: TuitionApi, status: TuitionLookupResult["tuitionStatu
 }
 
 // SCR-02: tra cứu MSSV tự động (debounce ở phía gọi hook).
-// GET /api/tuition/{mssv} trả về khoản CHƯA đóng đến hạn sớm nhất, hoặc 404 nếu không còn khoản nào.
+// GET /api/tuition/{mssv} trả về khoản chưa đóng đến hạn sớm nhất, hoặc 404 nếu không còn khoản nào.
 // 404 có thể là "MSSV không tồn tại" HOẶC "đã đóng hết" — phân biệt bằng /{mssv}/all.
 export async function lookupTuitionByStudentId(studentId: string): Promise<TuitionLookupResult> {
   try {

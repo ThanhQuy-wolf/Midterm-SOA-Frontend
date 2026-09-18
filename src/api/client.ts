@@ -17,8 +17,8 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Không có refresh token — token hết hạn/sai/thiếu đều là 401, buộc đăng nhập lại.
-    // Bỏ qua 401 của chính request /auth/login (đó là "sai mật khẩu", không phải hết phiên).
+    // Không có refresh token nên mọi 401 đều buộc đăng nhập lại. Trừ 401 của chính
+    // /auth/login: đó là sai mật khẩu chứ không phải hết phiên.
     const url = error.config?.url ?? "";
     if (error.response?.status === 401 && !url.includes("/auth/login")) {
       localStorage.removeItem("accessToken");
@@ -50,11 +50,11 @@ export function getApiErrorStatus(error: unknown): number | undefined {
   return isAxiosError(error) ? error.response?.status : undefined;
 }
 
-// Payment-service kèm số liệu ở hai loại lỗi của luồng OTP (xem docs/API-FRONTEND.md):
+// Hai loại lỗi trong luồng OTP có kèm số liệu (xem docs/API-FRONTEND.md):
 //   409 sai OTP -> remainingAttempts
-//   429 bị chặn -> retryAfterSeconds (+ header Retry-After)
-// Các lỗi khác chỉ có message, nên hai hàm này trả undefined — sự CÓ MẶT của
-// field chính là tín hiệu phân biệt, đáng tin hơn hẳn việc dò chuỗi tiếng Việt.
+//   429 bị chặn -> retryAfterSeconds, kèm header Retry-After
+// Các lỗi khác chỉ có message nên hai hàm dưới trả undefined. Chính việc field có
+// mặt hay không mới là tín hiệu phân biệt, đáng tin hơn dò chuỗi tiếng Việt.
 
 export function getApiErrorRemainingAttempts(error: unknown): number | undefined {
   if (!isAxiosError(error)) return undefined;
@@ -66,8 +66,8 @@ export function getApiErrorRetryAfterSeconds(error: unknown): number | undefined
   if (!isAxiosError(error)) return undefined;
   const raw = (error.response?.data as { retryAfterSeconds?: unknown } | undefined)?.retryAfterSeconds;
   if (typeof raw === "number" && Number.isFinite(raw)) return Math.max(0, Math.trunc(raw));
-  // Dự phòng bằng header. Lưu ý: trình duyệt CHỈ đọc được Retry-After khi server
-  // liệt kê nó trong Access-Control-Expose-Headers — nếu thiếu, chỉ còn field body.
+  // Dự phòng bằng header. Gateway khai Retry-After trong Access-Control-Expose-Headers
+  // nên trình duyệt đọc được; bỏ khai báo đó đi thì chỉ còn field trong body.
   const header = error.response?.headers?.["retry-after"];
   const parsed = typeof header === "string" ? Number.parseInt(header, 10) : Number.NaN;
   return Number.isFinite(parsed) ? Math.max(0, parsed) : undefined;

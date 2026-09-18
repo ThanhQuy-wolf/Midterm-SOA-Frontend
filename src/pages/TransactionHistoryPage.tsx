@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { getTransactionHistory } from "../api/history";
 import type { PaymentHistoryStatus } from "../types/domain";
-import { formatDateTime, formatVnd } from "../utils/format";
+import { formatDateTime, formatVnd, shortenId } from "../utils/format";
 import {
   IconCheckCircle,
   IconClock,
@@ -81,7 +81,9 @@ export function TransactionHistoryPage() {
                         <span className="history-sub">Không có thông tin</span>
                       )}
                     </td>
-                    <td>{row.id}</td>
+                    <td style={{ whiteSpace: "nowrap" }} title={row.id}>
+                      {shortenId(row.id)}
+                    </td>
                     <td className="col-amount" style={{ fontWeight: 600 }}>
                       {formatVnd(row.amount)}
                     </td>

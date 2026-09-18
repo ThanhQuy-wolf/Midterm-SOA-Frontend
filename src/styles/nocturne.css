@@ -1,26 +1,24 @@
-/* Ledger — design-system tokens and component classes (light theme).
-   Source of truth for the system's look: a bank ledger's paper, ink and
-   stamp. Retune it here; see readme.md for the original component-library
-   handoff this file still tracks (class names kept 1:1 for compatibility,
-   only the values and a few additive rules changed for the light retheme). */
+/* Token và class dùng chung cho toàn bộ giao diện, theme sáng.
+   Hình ảnh chủ đạo là sổ cái ngân hàng: giấy kẻ ô, mực và con dấu.
+   Muốn đổi diện mạo thì sửa ở đây, đừng ghi đè rải rác trong từng trang. */
 @import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;1,500&family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
 
 :root {
-  /* — ground — */
-  --color-bg: #EEF2E9;      /* pale sage ledger paper — the page ground */
-  --color-surface: #FFFFFF; /* white form-card paper, sits on the ledger ground */
-  --color-surface-soft: #FBFAF3; /* warm ivory — passbook-stub surfaces */
-  --color-text: #202B3B;    /* deep navy-ink — primary text */
-  --color-paper-line: color-mix(in srgb, var(--color-text) 6%, transparent); /* ruled hairline on the page ground */
+  /* nền */
+  --color-bg: #EEF2E9;      /* giấy sổ cái, nền trang */
+  --color-surface: #FFFFFF; /* giấy phiếu, nổi trên nền */
+  --color-surface-soft: #FBFAF3; /* ngà ấm, dùng cho cuống phiếu */
+  --color-text: #202B3B;    /* mực xanh đậm, chữ chính */
+  --color-paper-line: color-mix(in srgb, var(--color-text) 6%, transparent); /* nét kẻ mảnh trên nền trang */
 
-  /* — ink accents — */
-  --color-accent: #24537D;    /* signature ink — interactive blue */
-  --color-accent-2: #2E6B4E;  /* credit ink — paid / completed / success */
-  --color-stamp: #A6402E;     /* seal ink — the stamp badge, terminal/attention states */
+  /* các màu mực nhấn */
+  --color-accent: #24537D;    /* mực ký, dùng cho phần tương tác */
+  --color-accent-2: #2E6B4E;  /* mực ghi có: đã đóng, thành công */
+  --color-stamp: #A6402E;     /* mực dấu: badge, trạng thái cần chú ý */
   --color-divider: color-mix(in srgb, var(--color-text) 18%, transparent);
 
-  /* Tonal ramps — one shared lightness scale so the same step of any role
-     reads at the same visual weight as the others. */
+  /* Ba dải màu dùng chung một thang độ sáng, để cùng một bậc ở vai trò nào
+     cũng nặng ngang nhau về thị giác. */
   --color-neutral-100: #F3F5F1;
   --color-neutral-200: #E4E8E1;
   --color-neutral-300: #CDD3CB;
@@ -55,24 +53,22 @@
   --color-stamp-200: #F1CDC2;
   --color-stamp-700: #7C3021;
 
-  /* Deck section-divider ground — unused by the app UI; kept for parity
-     with the original handoff, not part of the light retheme. */
+  /* Nền cho vách ngăn section. App hiện không dùng, giữ lại phòng khi cần. */
   --color-section: #262a60;
   --color-section-glow: #353b80;
   --color-section-ghost: #4c5397;
 
-  /* — type — three roles, three faces: a serif for the human voice
-     (titles), a Vietnamese-built grotesk for interface copy, and a
-     tabular mono for every ledger figure (money, IDs, OTP, dates). */
+  /* Ba vai trò, ba font: serif cho tiêu đề, một grotesk làm riêng cho tiếng
+     Việt lo phần chữ giao diện, và mono tabular cho mọi con số trên sổ
+     (tiền, mã, OTP, ngày). */
   --font-heading: "Spectral", "Noto Serif", Georgia, serif;
   --font-heading-weight: 600;
   --font-body: "Be Vietnam Pro", "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  /* Two type ramps, deliberately separate. Prose steps in a ~1.25 ratio and
-     tops out early — an interface, not a poster. Figures get their own ramp
-     because on a ledger the money is read before the words around it, so a
-     sum must outweigh its label without the label having to shrink. */
+  /* Hai thang cỡ chữ tách riêng. Phần chữ nhảy bậc theo tỉ lệ ~1.25 và dừng
+     sớm, vì đây là giao diện chứ không phải poster. Con số có thang riêng:
+     trên sổ, người ta đọc số tiền trước cả nhãn của nó. */
   --fs-display: clamp(31px, 3.6vw, 39px);
   --fs-title: 30px;
   --fs-subtitle: 24px;
@@ -86,8 +82,8 @@
   --fs-fig-lg: 24px;
   --fs-fig: 18px;
 
-  /* 4px grid. The old scale topped out at 22px against 20px type, which is
-     why every surface read as cramped; a form needs more air than its type. */
+  /* Lưới 4px. Thang cũ dừng ở 22px trong khi cỡ chữ đã 20px nên nhìn đâu cũng
+     thấy chật; biểu mẫu cần nhiều khoảng thở hơn cỡ chữ của nó. */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 14px;
@@ -100,7 +96,7 @@
   --radius-md: 8px;
   --radius-lg: 14px;
 
-  /* Elevation — soft ink-tinted shadows, paper lifting off paper. */
+  /* Đổ bóng nhạt ám màu mực, kiểu tờ giấy này kênh lên khỏi tờ kia. */
   --shadow-sm: 0 0 0 1px color-mix(in srgb, var(--color-text) 12%, transparent);
   --shadow-md: 0 1px 2px color-mix(in srgb, var(--color-text) 7%, transparent),
                0 10px 24px color-mix(in srgb, var(--color-text) 10%, transparent);
@@ -109,7 +105,7 @@
 }
 
 body {
-  /* Ruled ledger paper — a hairline every 28px behind the whole app. */
+  /* Giấy kẻ ô: một nét mảnh mỗi 28px, chạy sau toàn bộ app. */
   background:
     repeating-linear-gradient(to bottom,
       transparent, transparent 27px,
@@ -122,11 +118,8 @@ h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-headi
 
 .lighten{mix-blend-mode:lighten;background-color:transparent}
 
-/* ══════════════════════════════════════════════════════════════════════════
-   Components — built with the tokens above. Plain CSS
-   on plain HTML: no JavaScript, no build step. Each class is documented in
-   readme.md and demonstrated in foundations/ and components/.
-   ══════════════════════════════════════════════════════════════════ */
+/* Các class component, dựng từ token phía trên. CSS thuần trên HTML thuần,
+   không JavaScript, không bước build nào. */
 
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; font-size: var(--fs-base); line-height: 1.6; font-weight: 400; }
@@ -150,8 +143,8 @@ figcaption {
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 .text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
-/* Every figure on a ledger is set in the mono face, tabular, so columns of
-   sums line up digit-for-digit down the page. */
+/* Mọi con số đều dùng font mono, tabular, để các cột tiền thẳng hàng theo
+   từng chữ số khi đọc dọc xuống. */
 .fig {
   font-family: var(--font-mono); font-weight: 600;
   font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
@@ -165,10 +158,9 @@ code {
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 ::selection { background: color-mix(in srgb, var(--color-accent) 24%, transparent); }
 
-/* — rules — */
-/* Rules fade to transparent at both ends instead of stopping cleanly — a
-   signature carried over from the original system. The ramp is 48px an
-   end, painted from the divider token. */
+/* đường kẻ */
+/* Đường kẻ nhoè dần về trong suốt ở hai đầu thay vì cắt ngang phựt. Đoạn
+   chuyển là 48px mỗi bên, lấy màu từ token divider. */
 .hr {
   height: 1px; border: 0; margin: var(--space-4) 0;
   background: linear-gradient(to right,
@@ -176,17 +168,15 @@ code {
     var(--color-divider) calc(100% - 48px), transparent);
 }
 
-/* — perforation — the tear line on a two-part receipt. Used only where a
-   surface really does split into a stub and a counterfoil, so the dashes
-   stay meaningful instead of becoming a second kind of divider. */
+/* Đường răng cưa của biên lai hai phần. Chỉ dùng ở chỗ mặt giấy thật sự tách
+   thành cuống và phần xé rời, để nét đứt không thành một loại divider thứ hai. */
 .perf {
   height: 0; border: 0; border-top: 1.5px dashed var(--color-divider);
   margin: var(--space-4) calc(var(--space-6) * -1);
 }
 
-/* — stamp badge — the SCR-0X form code, worn as a rubber-stamp mark.
-   Every screen already carries this code in its copy; this is that code
-   made into the page's one recurring, load-bearing ornament. */
+/* Mã màn hình SCR-0X, đóng như một con dấu. Mỗi màn đều mang mã này, ở đây
+   nó được dựng thành chi tiết trang trí lặp lại của cả trang. */
 .stamp {
   display: inline-flex; align-items: center; gap: 6px;
   font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
@@ -199,7 +189,7 @@ code {
   margin-bottom: var(--space-3);
 }
 
-/* — buttons — */
+/* nút */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   white-space: nowrap;
@@ -228,7 +218,7 @@ code {
 .btn-icon { width: 46px; height: 46px; padding: 0; }
 .btn-block { width: 100%; }
 
-/* — forms — */
+/* biểu mẫu */
 .field > label {
   display: block; font-size: var(--fs-sm); margin-bottom: var(--space-2);
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
@@ -243,7 +233,7 @@ code {
 .input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
 .input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
 
-/* — input with leading icon — */
+/* ô nhập có icon đứng đầu */
 .field-icon { position: relative; display: flex; align-items: center; }
 .field-icon > svg {
   position: absolute; left: 13px; pointer-events: none;
@@ -296,11 +286,11 @@ textarea.input { min-height: 90px; resize: vertical; }
 .seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
 .seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 
-/* — OTP cells — six boxed digits instead of one blurred text field: the
-   bank-card-slot pattern people already recognize from real OTP prompts. */
+/* Sáu ô số thay cho một ô text dài, giống khe nhập mã người ta đã quen thấy
+   ở các màn OTP thật. */
 .otp-cells { display: flex; gap: var(--space-2); }
-/* Split 3 + 3. A six-digit code is spoken and remembered in two triples, so
-   the boxes are grouped the way the code is actually read back. */
+/* Chia 3 + 3: mã sáu số được đọc và nhớ theo hai cụm ba, nên nhóm ô theo
+   đúng cách người ta đọc lại nó. */
 .otp-cell:nth-child(3) { margin-right: var(--space-4); }
 .otp-cell {
   width: 56px; height: 66px; text-align: center; padding: 0;
@@ -315,9 +305,8 @@ textarea.input { min-height: 90px; resize: vertical; }
 .otp-cell.filled { border-color: var(--color-accent-400); background: var(--color-accent-100); }
 .otp-cell:disabled { opacity: 0.5; }
 
-/* — cards — a bordered box of ledger-form paper. When it carries a
-   .card-kicker, that label becomes a tab clipped to the top edge, the way
-   a paper form's section box carries its own printed heading. */
+/* Thẻ: khung giấy biểu mẫu có viền. Khi có .card-kicker, nhãn đó thành một
+   tab gá lên mép trên, giống ô mục trên tờ khai in sẵn tiêu đề của nó. */
 .card {
   position: relative;
   display: flex; flex-direction: column; gap: var(--space-4);
@@ -351,10 +340,9 @@ textarea.input { min-height: 90px; resize: vertical; }
 .elev-md { box-shadow: var(--shadow-md); }
 .elev-lg { box-shadow: var(--shadow-lg); }
 
-/* — ledger row — a label on the left, a mono value flushed right: the classic
-   invoice/passbook line, used for every figure that reads as a line item.
-   The row rule between lines is what ties label to value; the old dotted
-   leader running between them was a second connector doing the same job. */
+/* Dòng sổ: nhãn bên trái, giá trị font mono dồn sang phải, đúng kiểu một dòng
+   hoá đơn hay sổ tiết kiệm. Nét kẻ giữa các dòng đã đủ nối nhãn với giá trị,
+   nên bỏ hàng chấm nối cũ vì nó làm đúng việc đó thêm lần nữa. */
 .ledger-row {
   display: flex; align-items: baseline; gap: var(--space-3);
   padding: 11px 0;
@@ -364,31 +352,31 @@ textarea.input { min-height: 90px; resize: vertical; }
   font-size: var(--fs-sm); color: color-mix(in srgb, var(--color-text) 62%, transparent);
   white-space: nowrap;
 }
-/* Plain spacer — pushes the value to the right edge of the row. */
+/* Khoảng đệm, đẩy giá trị ra sát mép phải của dòng. */
 .ledger-row__leader { flex: 1; min-width: var(--space-3); }
 .ledger-row__value {
   font-family: var(--font-mono); font-weight: 600; font-size: var(--fs-fig);
   font-variant-numeric: tabular-nums;
   text-align: right;
-  /* No nowrap: a value can be a 36-char UUID, and pinned to one line it used
-     to run straight out of the card. `anywhere` also lets the box shrink
-     below its longest token, so flex gives it only the room that is left.
-     Short figures never reach the edge, so money still sits on one line. */
+  /* Không dùng nowrap: giá trị có thể là UUID 36 ký tự, ghim một dòng là nó
+     chạy tràn ra ngoài thẻ. `anywhere` còn cho hộp co nhỏ hơn token dài nhất
+     nên flex chỉ cấp đúng phần chỗ còn lại. Số ngắn không bao giờ chạm mép,
+     tiền vẫn nằm gọn một dòng. */
   min-width: 0; overflow-wrap: anywhere;
 }
-/* The mono face is reserved for figures — money, IDs, phone numbers, dates.
-   A name or an email is prose and is set in the body face, or the ledger
-   stops signalling "this is a number" at all. */
+/* Font mono chỉ dành cho con số: tiền, mã, số điện thoại, ngày tháng. Tên hay
+   email là chữ nên dùng font body — không thì font mono mất hẳn tác dụng báo
+   hiệu "đây là một con số". */
 .ledger-row__value--text {
   font-family: var(--font-body); font-weight: 500; font-size: var(--fs-base);
 }
-/* A value too long to sit on one line with its label (an email, a full name)
-   wraps under it instead of forcing the row wide. */
+/* Giá trị quá dài để nằm chung dòng với nhãn (email, họ tên đầy đủ) thì xuống
+   dòng dưới nhãn, thay vì kéo giãn cả hàng. */
 .ledger-row--stack { flex-direction: column; align-items: stretch; gap: 3px; }
 .ledger-row--stack .ledger-row__leader { display: none; }
 .ledger-row--stack .ledger-row__value { text-align: left; white-space: normal; word-break: break-word; }
 
-/* — tags — */
+/* nhãn trạng thái */
 .tag {
   display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-sm);
   font-family: var(--font-body); font-weight: 500;
@@ -404,7 +392,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 .tag-outline { border: 1px solid var(--color-divider); color: var(--color-text); }
 .tag-stamp { border: 1px solid var(--color-stamp); color: var(--color-stamp); background: var(--color-stamp-100); }
 
-/* — navigation — */
+/* điều hướng */
 .nav {
   display: flex; align-items: center; gap: var(--space-6);
   padding: var(--space-3) var(--space-6);
@@ -424,12 +412,12 @@ textarea.input { min-height: 90px; resize: vertical; }
 .nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
 .nav a:hover svg, .nav a[aria-current='page'] svg { color: var(--color-accent); }
 
-/* — tables — */
+/* bảng */
 .table { width: 100%; border-collapse: collapse; font-size: var(--fs-base); }
 .table th {
   text-align: left; font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 0.08em; text-transform: uppercase;
   color: color-mix(in srgb, var(--color-text) 60%, transparent);
-  padding: var(--space-2) var(--space-3); border-bottom: 1px solid transparent; /* keeps layout; the row paints the fading rule */
+  padding: var(--space-2) var(--space-3); border-bottom: 1px solid transparent; /* giữ layout; nét kẻ do cả hàng vẽ */
   white-space: nowrap;
 }
 .table td {
@@ -438,7 +426,8 @@ textarea.input { min-height: 90px; resize: vertical; }
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
 }
 .table td .tag { font-family: var(--font-body); }
-/* Row rules as row-level strips so the end-fade spans the row, not each cell. */
+/* Nét kẻ vẽ ở cấp hàng, để đoạn nhoè trải hết chiều ngang chứ không nhoè
+   lặp lại trong từng ô. */
 .table thead tr {
   background: linear-gradient(to right,
     transparent, var(--color-divider) 48px,
@@ -449,8 +438,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     transparent, color-mix(in srgb, var(--color-text) 12%, transparent) 48px,
     color-mix(in srgb, var(--color-text) 12%, transparent) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
 }
-/* Ledger banding — every other row carries a faint tint, the bookkeeper's
-   register stripe, layered under the same fading row rule. */
+/* Cách dòng tô nền nhạt, kiểu sổ kế toán kẻ sọc, nằm dưới cùng nét kẻ hàng. */
 .table tbody tr:nth-child(even) {
   background:
     linear-gradient(color-mix(in srgb, var(--color-text) 4%, transparent),
@@ -461,7 +449,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 .table tbody tr { transition: background-color 150ms ease; }
 .table tbody tr:hover {
-  /* the hover tint layers over the row rule, which keeps painting */
+  /* nền hover chồng lên nét kẻ hàng, nét vẫn được vẽ bình thường */
   background:
     linear-gradient(color-mix(in srgb, var(--color-accent) 6%, transparent),
                     color-mix(in srgb, var(--color-accent) 6%, transparent)) no-repeat 0 0 / 100% 100%,
@@ -470,7 +458,7 @@ textarea.input { min-height: 90px; resize: vertical; }
       color-mix(in srgb, var(--color-text) 12%, transparent) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
 }
 
-/* — dialog — */
+/* hộp thoại */
 .dialog-backdrop {
   position: fixed; inset: 0; display: grid; place-items: center;
   padding: var(--space-4);

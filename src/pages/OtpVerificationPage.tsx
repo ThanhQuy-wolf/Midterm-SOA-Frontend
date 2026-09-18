@@ -33,12 +33,11 @@ export function OtpVerificationPage() {
   const navigationType = useNavigationType();
   const queryClient = useQueryClient();
   const initialTransaction = (location.state as OtpLocationState | null)?.transaction ?? null;
-  // location.state là snapshot tĩnh chụp tại thời điểm push — nó vẫn ghi status "OTP_SENT" ngay cả
-  // khi giao dịch đã bị hủy/hết hạn sau đó (vd. do rời màn hình OTP trước đó), nên KHÔNG thể dùng
-  // transaction.status để phát hiện trường hợp này. Chỉ có navigationType mới phân biệt được:
-  // "PUSH" là điều hướng thật từ SCR-02 (bấm "Xác nhận giao dịch"), còn "POP" là quay lại bằng
-  // back/forward button. Theo quyết định 1: quay lại SCR-03 bằng bất kỳ cách nào khác ngoài PUSH
-  // đều coi giao dịch đã mất hiệu lực, không cố phục hồi form nhập OTP.
+  // location.state chỉ là ảnh chụp lúc push, vẫn ghi "OTP_SENT" kể cả khi giao dịch đã
+  // hủy hoặc hết hạn sau đó, nên transaction.status không dùng để phát hiện được. Phân
+  // biệt bằng navigationType: "PUSH" là vừa bấm "Xác nhận giao dịch" bên SCR-02, "POP"
+  // là bấm back/forward. Vào lại màn OTP bằng đường nào khác PUSH đều coi như giao dịch
+  // đã mất hiệu lực, không phục hồi form.
   const validInitialTransaction = navigationType === "PUSH" ? initialTransaction : null;
 
   const [transaction, setTransaction] = useState<Transaction | null>(validInitialTransaction);

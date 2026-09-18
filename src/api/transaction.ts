@@ -9,11 +9,9 @@ import { maskEmail } from "../utils/format";
 import type { Payer, Transaction, TransactionFailureReason } from "../types/domain";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
-// Không có hằng số MAX_OTP_ATTEMPTS ở FE: giới hạn số lần thử là quy tắc bảo mật
-// chống brute-force nên backend là nguồn sự thật duy nhất. FE chỉ hiển thị lại
-// remainingAttempts mà mỗi response 409 trả về, không tự đếm.
+// Cố tình không có MAX_OTP_ATTEMPTS ở đây: giới hạn số lần thử là luật chống
+// brute-force của backend. FE chỉ hiển thị lại remainingAttempts trong mỗi 409.
 
-// Response thật của POST /api/payments/initiate.
 interface InitiateApiResponse {
   transactionId: string;
   amount: number;
@@ -30,11 +28,10 @@ function storedPayerEmail(): string {
   }
 }
 
-// SCR-02 -> SCR-03: bấm "Xác nhận giao dịch". Backend tạo giao dịch PENDING + gửi OTP về email.
-// Backend chỉ trả { transactionId, amount, balance } nên FE tự dựng phần còn lại của Transaction
-// (studentName lấy từ kết quả tra cứu, hạn OTP = now + 5 phút). attemptsLeft để trống: response
-// initiate không nói số lần thử, và FE không được đoán — con số đầu tiên đến từ lần sai đầu tiên.
-// Có thể ném lỗi 429 kèm retryAfterSeconds khi vượt hạn mức gửi OTP theo giờ.
+// SCR-02 -> SCR-03. Backend chỉ trả { transactionId, amount, balance } nên phần còn lại
+// của Transaction dựng tại đây: studentName lấy từ kết quả tra cứu, hạn OTP là 5 phút kể
+// từ bây giờ. attemptsLeft để trống cho tới lần nhập sai đầu tiên.
+// Ném 429 kèm retryAfterSeconds khi vượt hạn mức gửi OTP theo giờ.
 export async function initiateTransaction(input: {
   studentId: string;
   studentName: string;
@@ -64,14 +61,13 @@ function classifyVerifyError(error: unknown): {
   const status = getApiErrorStatus(error);
   const message = (getApiErrorMessage(error) ?? "").toLowerCase();
 
-  // payment-service dùng chung InsufficientBalanceException (-> HTTP 409) cho
-  // rất nhiều ca khác nhau, nên riêng mã 409 KHÔNG nói lên điều gì. Điểm tựa
-  // đúng là: trong các lỗi 409 của verify-otp, "OTP không hợp lệ" là ca DUY
-  // NHẤT còn thử lại được — mọi 409 khác đều nghĩa là saga đã hoàn tiền và ghi
-  // giao dịch thành FAILED trong DB, không được trừ lượt rồi cho gõ tiếp.
+  // Backend gộp nhiều ca vào cùng InsufficientBalanceException nên mã 409 một mình
+  // không đủ để kết luận. Trong các lỗi 409 của verify-otp, chỉ "OTP không hợp lệ"
+  // là còn thử lại được; số còn lại đều là saga đã hoàn tiền và ghi giao dịch thành
+  // FAILED, cho gõ tiếp là vô nghĩa.
 
-  // 429 và ca "sai OTP" đã được verifyOtp xử lý trước bằng mã HTTP và
-  // remainingAttempts; ở đây chỉ còn là lưới dự phòng theo chuỗi.
+  // Hai ca 429 và sai OTP đã được verifyOtp bắt bằng mã HTTP và remainingAttempts,
+  // phần dưới đây chỉ là lưới dự phòng dò theo chuỗi.
   if (/quá nhiều lần|quá số lần|too many|maximum/.test(message)) {
     return { failureReason: "OTP_LOCKED", locked: true, expired: false };
   }
@@ -80,11 +76,9 @@ function classifyVerifyError(error: unknown): {
     return { failureReason: "SYSTEM_ERROR", locked: true, expired: false };
   }
 
-  // "OTP không hợp lệ hoặc đã hết hạn" (PaymentService.java:172) = OTP SAI.
-  // Backend cố tình gộp sai/hết hạn vào một câu để không lộ thông tin, nên phải
-  // khớp cụm này TRƯỚC luật "hết hạn" bên dưới — nếu không chính chữ "hết hạn"
-  // trong câu sẽ bị hiểu nhầm thành OTP đã hết hiệu lực. Ca hết hạn thật đã
-  // được đồng hồ đếm ngược phía client xử lý.
+  // Backend cố tình gộp "sai" và "hết hạn" vào một câu để không lộ thông tin, nên
+  // luật này phải đứng trước luật "hết hạn" bên dưới — không thì chính chữ "hết hạn"
+  // trong câu bị hiểu nhầm. Hết hạn thật thì đồng hồ đếm ngược phía client đã bắt.
   if (/otp không hợp lệ|otp không đúng|invalid otp/.test(message)) {
     return { locked: false, expired: false };
   }
@@ -92,10 +86,9 @@ function classifyVerifyError(error: unknown): {
   if (/hết hạn|hết hiệu lực|expired/.test(message)) {
     return { failureReason: "OTP_EXPIRED", locked: false, expired: true };
   }
-  // Chủ ngữ phải là khoản học phí, và có thể có chữ chen vào giữa:
-  //   "Học phí đã được người khác thanh toán" (PaymentService.java:260)
-  //   "Khoản học phí này đã được đóng"        (PaymentService.java:59)
-  // Ràng buộc "học phí|khoản" ở đầu để không nuốt nhầm "Thanh toán thất bại".
+  // Khớp "Học phí đã được người khác thanh toán" và "Khoản học phí này đã được đóng",
+  // vốn có chữ chen vào giữa. Buộc chủ ngữ là học phí để không nuốt nhầm câu
+  // "Thanh toán thất bại".
   if (/(học phí|khoản).{0,40}(thanh toán|đóng)|already paid/.test(message)) {
     return { failureReason: "TUITION_ALREADY_PAID", locked: true, expired: false };
   }
@@ -129,9 +122,8 @@ export async function verifyOtp(transaction: Transaction, otp: string): Promise<
     if (status === undefined) {
       throw error; // lỗi mạng — để React Query xử lý
     }
-    // 5xx là sự cố phía server (vd. 503 "Tài khoản đang được xử lý bởi một giao
-    // dịch khác"), không phải người dùng gõ sai. Ném ra để React Query báo lỗi
-    // thay vì rơi xuống nhánh mặc định và trừ oan một lượt thử.
+    // 5xx là sự cố phía server, không phải người dùng gõ sai. Ném ra cho React Query
+    // báo lỗi, đừng rơi xuống nhánh mặc định rồi trừ oan một lượt thử.
     if (status >= 500) {
       throw error;
     }
@@ -148,11 +140,9 @@ export async function verifyOtp(transaction: Transaction, otp: string): Promise<
       };
     }
 
-    // Chỉ ca "sai OTP" mới kèm remainingAttempts (InvalidOtpException -> 409),
-    // nên sự có mặt của field này là dấu hiệu tin cậy — không cần dò chuỗi
-    // tiếng Việt. Con số lấy nguyên từ backend, FE không tự trừ.
-    // Khi về 0, backend đã ghi giao dịch thành FAILED và xoá OTP key, nên lịch
-    // sử tự phản ánh đúng — FE không cần nhớ gì thêm.
+    // Chỉ ca sai OTP mới kèm remainingAttempts, nên có field này là đủ tin cậy,
+    // khỏi phải dò chuỗi tiếng Việt. Khi nó về 0 thì backend đã ghi giao dịch
+    // thành FAILED và xoá OTP, lịch sử tự khớp.
     const remainingAttempts = getApiErrorRemainingAttempts(error);
     if (remainingAttempts !== undefined) {
       return { ...transaction, status: "OTP_SENT", attemptsLeft: remainingAttempts };
