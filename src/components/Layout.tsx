@@ -60,7 +60,11 @@ export function Layout() {
         </header>
       )}
 
-      <main key={location.pathname} className="page-enter shell">
+      {/* Lịch sử là bảng nhiều cột nên được nới rộng hơn measure chung. */}
+      <main
+        key={location.pathname}
+        className={location.pathname === "/history" ? "page-enter shell shell--wide" : "page-enter shell"}
+      >
         <Outlet />
       </main>
     </div>

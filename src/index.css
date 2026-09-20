@@ -6,6 +6,10 @@
   /* Page shell — one measure for every screen, so titles, cards and table
      rules all start on the same left edge as you move between pages. */
   --shell-max: 1120px;
+  /* Ngoại lệ cho màn bảng: 6 cột trong 1120px làm mỗi cột bị bóp lại trong khi
+     hai rìa trang còn thừa chỗ. Các màn còn lại vẫn giữ --shell-max để dòng chữ
+     không dài quá tầm đọc. */
+  --shell-max-wide: 1440px;
   --shell-pad-x: clamp(20px, 4vw, 56px);
   --shell-pad-y: clamp(32px, 4vw, 56px);
 }
@@ -24,6 +28,7 @@ a:hover {
   margin: 0 auto;
   padding: var(--shell-pad-y) var(--shell-pad-x) var(--space-10);
 }
+.shell--wide { max-width: var(--shell-max-wide); }
 
 /* ══════════════════════════════════════════════════════════════════════
    App bar — brand, the two sections of the app as file tabs sitting on the
