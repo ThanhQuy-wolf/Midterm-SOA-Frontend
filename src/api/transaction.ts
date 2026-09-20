@@ -14,8 +14,21 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 
 interface InitiateApiResponse {
   transactionId: string;
+  tuitionId: string;
+  semester: string;
   amount: number;
   balance: number;
+}
+
+// Khoản được ghi nợ khác khoản người dùng vừa xem trên phiếu thu. Xảy ra khi giữa
+// lúc tra cứu và lúc bấm xác nhận, khoản đang xem được người khác đóng (hoặc một
+// khoản cũ hơn quay lại trạng thái chưa đóng) — payment-service resolve lại theo
+// MSSV nên có thể chọn ra khoản khác.
+export class TuitionChangedError extends Error {
+  constructor() {
+    super("Khoản học phí cần đóng vừa thay đổi. Vui lòng kiểm tra lại phiếu thu trước khi xác nhận.");
+    this.name = "TuitionChangedError";
+  }
 }
 
 function storedPayerEmail(): string {
@@ -35,10 +48,19 @@ function storedPayerEmail(): string {
 export async function initiateTransaction(input: {
   studentId: string;
   studentName: string;
+  /** Khoản học phí FE đang hiển thị, để đối chiếu với khoản backend thật sự thu. */
+  expectedTuitionId: string;
 }): Promise<Transaction> {
   const { data } = await apiClient.post<InitiateApiResponse>("/payments/initiate", {
     mssv: input.studentId,
   });
+  // POST /payments/initiate chỉ nhận mssv: backend tự chọn lại khoản đến hạn sớm
+  // nhất, nên khoản thu được có thể không phải khoản vừa hiển thị. Chặn ngay tại
+  // đây thay vì để người dùng nhập OTP cho một khoản họ chưa nhìn thấy. Giao dịch
+  // vừa tạo sẽ tự hết hạn sau 5 phút, đổi lại người dùng không bị trừ tiền nhầm khoản.
+  if (data.tuitionId !== input.expectedTuitionId) {
+    throw new TuitionChangedError();
+  }
   const now = Date.now();
   const email = storedPayerEmail();
   return {

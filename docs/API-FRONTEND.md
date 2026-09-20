@@ -161,10 +161,14 @@ Response `200`:
 ```json
 {
   "transactionId": "44444444-...-uuid",
+  "tuitionId": "22222222-...-uuid",
+  "semester": "HK1-2526",
   "amount": 8500000,
   "balance": 100000000
 }
 ```
+- `tuitionId`, `semester` *(thêm 2026-09-20)*: khoản học phí **thật sự** được ghi nợ. Request chỉ gửi `mssv` nên backend tự chọn lại khoản đến hạn sớm nhất — khoản này có thể khác khoản FE vừa tra cứu nếu người khác vừa đóng nó. FE đối chiếu `tuitionId` với khoản đang hiển thị, lệch thì huỷ luồng thay vì đi tiếp sang màn OTP.
+
 Lỗi thường gặp: `404` không tìm thấy khoản chưa đóng, `409`/`400` số dư không đủ hoặc đã đóng rồi, `429`-kiểu (400 với message) nếu xin OTP quá nhiều lần trong thời gian ngắn.
 
 ### POST `/api/payments/verify-otp`
@@ -191,6 +195,7 @@ Response `200`, sắp xếp theo `createdAt` giảm dần (mới nhất trước
     "tuitionId": "22222222-...-uuid",
     "mssv": "524H0001",
     "studentName": "Tran Huu Danh",
+    "semester": "HK1-2526",
     "amount": 8500000,
     "status": "SUCCESS",
     "errorMessage": null,
@@ -201,6 +206,7 @@ Response `200`, sắp xếp theo `createdAt` giảm dần (mới nhất trước
 ```
 - `tuitionId`: UUID khoản học phí — dùng `GET /api/tuition/id/{tuitionId}` nếu cần tra thêm chi tiết (kỳ, hạn đóng). FE không gọi.
 - `mssv`, `studentName` *(thêm 2026-09-09)*: payment-service chụp lại lúc `initiate` từ `GET /api/tuition/{mssv}` và lưu vào bảng `transactions` — không phải join lúc đọc, nên lịch sử giữ đúng tên tại thời điểm giao dịch. **Có thể `null`** với các giao dịch tạo trước ngày này; FE fallback về mã giao dịch.
+- `semester` *(thêm 2026-09-20)*: học kỳ của khoản học phí, cũng là snapshot lúc `initiate`. **Có thể `null`** với giao dịch tạo trước ngày này; bảng lịch sử hiển thị `—`.
 - `status`: `PENDING` (vừa khởi tạo, chờ OTP) · `PROCESSING` (đang trừ tiền, tạm thời) · `SUCCESS` · `FAILED` (thất bại hoặc bị huỷ — xem `errorMessage`).
 - `errorMessage`: chỉ có giá trị khi `status = FAILED`.
 

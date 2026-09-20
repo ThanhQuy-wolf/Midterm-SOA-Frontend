@@ -10,10 +10,19 @@ export interface Payer {
 export type TuitionStatus = "UNPAID" | "PAID";
 
 export interface TuitionLookupResult {
+  // Định danh khoản học phí backend sẽ thu — dùng để đối chiếu với khoản thật sự
+  // được ghi nợ lúc initiate, phòng khi khoản đang xem bị người khác đóng trước.
+  tuitionId: string;
   studentId: string;
   studentName: string;
+  semester: string;
+  // Chỉ GET /api/tuition/id/{id} mới có dueDate; undefined khi không lấy được.
+  dueDate?: string;
   tuitionAmount: number;
   tuitionStatus: TuitionStatus;
+  // Ngữ cảnh các khoản chưa đóng còn lại của sinh viên (gồm cả khoản đang thu).
+  outstandingCount: number;
+  outstandingTotal: number;
 }
 
 export type TransactionStatus =
@@ -61,6 +70,7 @@ export interface TransactionHistoryItem {
   // backend bổ sung hai field này — bảng lịch sử fallback về mã giao dịch.
   mssv: string | null;
   studentName: string | null;
+  semester: string | null;
   amount: number;
   status: PaymentHistoryStatus;
   errorMessage: string | null;

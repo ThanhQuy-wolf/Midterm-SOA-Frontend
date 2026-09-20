@@ -24,6 +24,14 @@ export function shortenId(id: string): string {
   return `${id.slice(0, 8)}…${id.slice(-4)}`;
 }
 
+// Ngày không kèm giờ (dueDate của khoản học phí, dạng "2025-10-15"). Tự tách chuỗi
+// thay vì qua Date để không bị lệch một ngày khi trình duyệt hiểu chuỗi là UTC.
+export function formatDate(isoDate: string): string {
+  const [year, month, day] = isoDate.slice(0, 10).split("-");
+  if (!year || !month || !day) return isoDate;
+  return `${day}/${month}/${year}`;
+}
+
 export function formatDateTime(isoString: string): string {
   const d = new Date(isoString);
   const pad = (n: number) => String(n).padStart(2, "0");

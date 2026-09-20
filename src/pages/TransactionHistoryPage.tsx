@@ -59,6 +59,7 @@ export function TransactionHistoryPage() {
               <tr>
                 <th>Thời gian</th>
                 <th>Sinh viên</th>
+                <th>Học kỳ</th>
                 <th>Mã giao dịch</th>
                 <th className="col-amount">Số tiền</th>
                 <th>Trạng thái</th>
@@ -80,6 +81,11 @@ export function TransactionHistoryPage() {
                       ) : (
                         <span className="history-sub">Không có thông tin</span>
                       )}
+                    </td>
+                    {/* Một MSSV có thể nợ nhiều kỳ, nên chỉ tên + số tiền là không
+                        đủ để biết dòng này đóng cho khoản nào. */}
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      {row.semester ?? <span className="history-sub">—</span>}
                     </td>
                     <td style={{ whiteSpace: "nowrap" }} title={row.id}>
                       {shortenId(row.id)}

@@ -4,15 +4,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { getAvailableBalance, lookupTuitionByStudentId } from "../api/tuition";
-import { initiateTransaction } from "../api/transaction";
+import { TuitionChangedError, initiateTransaction } from "../api/transaction";
 import { getApiErrorMessage, getApiErrorRetryAfterSeconds, getApiErrorStatus } from "../api/client";
-import { formatDuration, formatVnd } from "../utils/format";
+import { formatDate, formatDuration, formatVnd } from "../utils/format";
 import {
   IconAlertCircle,
   IconAlertTriangle,
   IconBanknote,
   IconCheckCircle,
   IconClock,
+  IconGraduationCap,
   IconIdCard,
   IconWallet,
 } from "../components/icons";
@@ -98,6 +99,13 @@ export function PaymentPage() {
       navigate("/otp", { state: { transaction } });
     },
     onError: (error) => {
+      // Khoản học phí đã đổi giữa lúc xem và lúc xác nhận: nạp lại phiếu thu để
+      // người dùng thấy khoản mới, và bắt họ tick lại điều khoản cho khoản đó.
+      if (error instanceof TuitionChangedError) {
+        setAgreedToTerms(false);
+        tuitionQuery.refetch();
+        return;
+      }
       // 429 ở initiate = vượt hạn mức gửi OTP theo giờ. Khoá nút cho tới khi
       // hết thời gian chờ backend chỉ định, thay vì để người dùng bấm lại vô ích.
       if (getApiErrorStatus(error) !== 429) return;
@@ -129,7 +137,11 @@ export function PaymentPage() {
   function handleConfirm() {
     if (!canConfirm || !tuition) return;
     initiateMutation.mutate(
-      { studentId: tuition.studentId, studentName: tuition.studentName },
+      {
+        studentId: tuition.studentId,
+        studentName: tuition.studentName,
+        expectedTuitionId: tuition.tuitionId,
+      },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["balance"] });
@@ -235,15 +247,25 @@ export function PaymentPage() {
                 <div className="lookup__name">{tuition.studentName}</div>
                 <div className="lookup__meta">
                   <span className="fig">{tuition.studentId}</span>
+                  {/* Trạng thái là của một khoản học phí, không phải của sinh viên:
+                      gắn học kỳ vào cùng badge để không đọc thành "sinh viên này
+                      chưa đóng học phí" trong khi họ còn nợ vài kỳ khác. */}
                   <span className={tuition.tuitionStatus === "PAID" ? "tag tag-success" : "tag tag-accent"}>
                     {tuition.tuitionStatus === "PAID" ? (
                       <IconCheckCircle size={15} />
                     ) : (
                       <IconAlertCircle size={15} />
                     )}
-                    {tuition.tuitionStatus === "PAID" ? "Đã thanh toán" : "Chưa thanh toán"}
+                    <span className="fig">{tuition.semester}</span>
+                    {tuition.tuitionStatus === "PAID" ? "· Đã thanh toán" : "· Chưa thanh toán"}
                   </span>
                 </div>
+                {unpaid && tuition.outstandingCount > 1 && (
+                  <div className="lookup__meta">
+                    Sinh viên còn <span className="fig">{tuition.outstandingCount}</span> khoản chưa đóng,
+                    tổng <span className="fig">{formatVnd(tuition.outstandingTotal)}</span>.
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -279,6 +301,23 @@ export function PaymentPage() {
 
                 <hr className="perf" />
 
+                {/* Khoản đang thu phải tự định danh được: cùng một sinh viên có thể
+                    bị thu số tiền khác nhau tuỳ học kỳ nào đến lượt. */}
+                <div className="meta-label">
+                  <IconGraduationCap size={16} />
+                  Khoản đang thu
+                </div>
+                <div className="fig" style={{ marginTop: 4, fontSize: "var(--fs-lg)" }}>
+                  {tuition.semester}
+                </div>
+                {tuition.dueDate && (
+                  <div className="meta" style={{ marginTop: 2 }}>
+                    Hạn đóng <span className="fig">{formatDate(tuition.dueDate)}</span>
+                  </div>
+                )}
+
+                <hr className="perf" />
+
                 <div className="meta-label">
                   <IconBanknote size={16} />
                   Số tiền thanh toán
@@ -288,6 +327,17 @@ export function PaymentPage() {
                 </div>
 
                 <hr className="perf" />
+
+                {tuition.outstandingCount > 1 && (
+                  <div className="inset inset--muted" style={{ marginBottom: "var(--space-4)" }}>
+                    <div style={{ fontSize: "var(--fs-sm)", lineHeight: 1.6 }}>
+                      Sinh viên còn <span className="fig">{tuition.outstandingCount}</span> khoản chưa
+                      đóng, tổng <span className="fig">{formatVnd(tuition.outstandingTotal)}</span>. Hệ
+                      thống thu theo thứ tự hạn đóng — kỳ cũ trước, nên phiếu này chỉ đóng được khoản{" "}
+                      <span className="fig">{tuition.semester}</span>.
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Row label="Số dư khả dụng">{formatVnd(availableBalance)}</Row>
@@ -325,11 +375,13 @@ export function PaymentPage() {
                   </div>
                 ) : (
                   initiateMutation.isError && (
-                    <div className="notice notice--warn" role="alert">
+                    <div className="notice notice--warn otp-shake" role="alert">
                       <IconAlertCircle size={19} />
                       <div>
-                        {getApiErrorMessage(initiateMutation.error) ??
-                          "Không tạo được giao dịch. Thử lại sau ít phút."}
+                        {initiateMutation.error instanceof TuitionChangedError
+                          ? initiateMutation.error.message
+                          : getApiErrorMessage(initiateMutation.error) ??
+                            "Không tạo được giao dịch. Thử lại sau ít phút."}
                       </div>
                     </div>
                   )
