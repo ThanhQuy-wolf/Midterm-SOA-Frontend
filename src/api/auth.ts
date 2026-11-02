@@ -38,9 +38,8 @@ export async function login(payload: LoginRequest): Promise<LoginResult> {
     userId: data.userId,
     balance: data.balance,
     payer: {
-      // Tên thật có trong DB (users.full_name) nhưng auth-service hiện chưa trả nó ra ở
-      // /auth/login lẫn /auth/users/{id}. Đọc sẵn fullName để khi backend bổ sung là chạy
-      // đúng ngay; trước đó vẫn hiển thị username thay vì để trống.
+      // fullName lấy từ GET /auth/users/{id}. Chỉ khi request đó lỗi mới phải tạm hiển
+      // thị username, để ô "Họ tên" không trống.
       payerFullName: profile?.fullName || payload.username,
       payerPhone: profile?.phone ?? "",
       payerEmail: data.email,
@@ -51,8 +50,8 @@ export async function login(payload: LoginRequest): Promise<LoginResult> {
 export interface UserInfo {
   id: string;
   email: string;
-  // Optional: auth-service chưa trả field này (xem AuthController.getUserInfo).
-  fullName?: string | null;
+  // Cột users.full_name là NOT NULL nên luôn có.
+  fullName: string;
   phone: string | null;
   balance: number;
 }
