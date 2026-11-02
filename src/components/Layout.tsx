@@ -6,12 +6,12 @@ import { formatVnd } from "../utils/format";
 import { IconCreditCard, IconHistory, IconLogOut, IconWallet } from "./icons";
 
 export function Layout() {
-  const { payer, isAuthenticated, signOut } = useAuth();
+  const { payer, userId, isAuthenticated, signOut } = useAuth();
   const location = useLocation();
 
   const balanceQuery = useQuery({
-    queryKey: ["balance"],
-    queryFn: getAvailableBalance,
+    queryKey: ["balance", userId],
+    queryFn: () => getAvailableBalance(userId),
     enabled: isAuthenticated,
     refetchOnMount: "always",
   });

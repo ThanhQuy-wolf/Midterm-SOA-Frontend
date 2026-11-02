@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Transaction, TransactionFailureReason } from "../types/domain";
 import { getAvailableBalance } from "../api/tuition";
+import { useAuth } from "../context/AuthContext";
 import { formatVnd } from "../utils/format";
 import { IconCheckCircle, IconCreditCard, IconHistory, IconXCircle } from "../components/icons";
 
@@ -32,10 +33,11 @@ export function TransactionResultPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as ResultLocationState | null;
+  const { userId } = useAuth();
 
   const balanceQuery = useQuery({
-    queryKey: ["balance"],
-    queryFn: getAvailableBalance,
+    queryKey: ["balance", userId],
+    queryFn: () => getAvailableBalance(userId),
     enabled: !!state?.transaction,
   });
 

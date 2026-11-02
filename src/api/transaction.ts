@@ -6,7 +6,7 @@ import {
   getApiErrorStatus,
 } from "./client";
 import { maskEmail } from "../utils/format";
-import type { ApiErrorCode, Payer, Transaction, TransactionFailureReason } from "../types/domain";
+import type { ApiErrorCode, Transaction, TransactionFailureReason } from "../types/domain";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
 // Cố tình không có MAX_OTP_ATTEMPTS ở đây: giới hạn số lần thử là luật chống
@@ -34,16 +34,6 @@ export class TuitionChangedError extends Error {
   }
 }
 
-function storedPayerEmail(): string {
-  try {
-    const raw = localStorage.getItem("payer");
-    const payer = raw ? (JSON.parse(raw) as Payer) : null;
-    return payer?.payerEmail ?? "";
-  } catch {
-    return "";
-  }
-}
-
 // SCR-02 -> SCR-03. Backend không trả tên sinh viên nên phần còn lại của Transaction dựng
 // tại đây: studentName lấy từ kết quả tra cứu, hạn OTP lấy từ otpExpiresAt (dự phòng 5 phút
 // nếu thiếu). attemptsLeft để trống cho tới lần nhập sai đầu tiên.
@@ -53,6 +43,8 @@ export async function initiateTransaction(input: {
   studentName: string;
   /** Khoản học phí FE đang hiển thị, để đối chiếu với khoản backend thật sự thu. */
   expectedTuitionId: string;
+  /** Email người nộp (từ AuthContext), chỉ để hiển thị dạng che ở SCR-03. */
+  payerEmail: string;
 }): Promise<Transaction> {
   // Gửi kèm tuitionId đang hiển thị: backend tự chọn khoản đến hạn sớm nhất theo MSSV,
   // nếu khoản đó đã đổi thì từ chối (TUITION_CHANGED) trước khi tạo giao dịch, không
@@ -74,7 +66,6 @@ export async function initiateTransaction(input: {
     throw new TuitionChangedError();
   }
   const now = Date.now();
-  const email = storedPayerEmail();
   return {
     transactionId: data.transactionId,
     studentId: input.studentId,
@@ -82,7 +73,7 @@ export async function initiateTransaction(input: {
     amountToPay: data.amount,
     status: "OTP_SENT",
     createdAt: new Date(now).toISOString(),
-    maskedEmail: email ? maskEmail(email) : undefined,
+    maskedEmail: input.payerEmail ? maskEmail(input.payerEmail) : undefined,
     otpExpiresAt: data.otpExpiresAt ?? new Date(now + OTP_TTL_MS).toISOString(),
   };
 }

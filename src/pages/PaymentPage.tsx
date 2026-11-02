@@ -46,7 +46,7 @@ export function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { payer } = useAuth();
+  const { payer, userId } = useAuth();
   const [studentId, setStudentId] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const debouncedStudentId = useDebouncedValue(studentId.trim());
@@ -74,8 +74,8 @@ export function PaymentPage() {
   const rateLimited = retryMsLeft > 0;
 
   const balanceQuery = useQuery({
-    queryKey: ["balance"],
-    queryFn: getAvailableBalance,
+    queryKey: ["balance", userId],
+    queryFn: () => getAvailableBalance(userId),
     refetchOnMount: "always",
   });
 
@@ -141,6 +141,7 @@ export function PaymentPage() {
         studentId: tuition.studentId,
         studentName: tuition.studentName,
         expectedTuitionId: tuition.tuitionId,
+        payerEmail: payer?.payerEmail ?? "",
       },
       {
         onSuccess: () => {

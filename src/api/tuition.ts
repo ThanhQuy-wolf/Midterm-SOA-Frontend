@@ -85,10 +85,9 @@ export async function lookupTuitionByStudentId(studentId: string): Promise<Tuiti
   }
 }
 
-// SCR-02: số dư khả dụng. Backend chưa tách riêng phần "đang giữ tạm" nên trả về số dư hiện tại
-// của user (GET /api/auth/users/{userId}).
-export async function getAvailableBalance(): Promise<AvailableBalance> {
-  const userId = localStorage.getItem("userId");
+// SCR-02: số dư khả dụng. Backend không giữ tạm số dư nên đây là số dư hiện tại của user
+// (GET /api/auth/users/{userId}). userId do nơi gọi lấy từ AuthContext.
+export async function getAvailableBalance(userId: string | null): Promise<AvailableBalance> {
   if (!userId) {
     throw new Error("Chưa đăng nhập");
   }
