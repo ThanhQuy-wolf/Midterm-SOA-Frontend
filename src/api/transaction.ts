@@ -54,13 +54,22 @@ export async function initiateTransaction(input: {
   /** Khoản học phí FE đang hiển thị, để đối chiếu với khoản backend thật sự thu. */
   expectedTuitionId: string;
 }): Promise<Transaction> {
-  const { data } = await apiClient.post<InitiateApiResponse>("/payments/initiate", {
-    mssv: input.studentId,
-  });
-  // POST /payments/initiate chỉ nhận mssv: backend tự chọn lại khoản đến hạn sớm
-  // nhất, nên khoản thu được có thể không phải khoản vừa hiển thị. Chặn ngay tại
-  // đây thay vì để người dùng nhập OTP cho một khoản họ chưa nhìn thấy. Giao dịch
-  // vừa tạo sẽ tự hết hạn sau 5 phút, đổi lại người dùng không bị trừ tiền nhầm khoản.
+  // Gửi kèm tuitionId đang hiển thị: backend tự chọn khoản đến hạn sớm nhất theo MSSV,
+  // nếu khoản đó đã đổi thì từ chối (TUITION_CHANGED) trước khi tạo giao dịch, không
+  // gửi OTP và không tốn lượt — người dùng không phải nhập OTP cho khoản họ chưa thấy.
+  let data: InitiateApiResponse;
+  try {
+    ({ data } = await apiClient.post<InitiateApiResponse>("/payments/initiate", {
+      mssv: input.studentId,
+      tuitionId: input.expectedTuitionId,
+    }));
+  } catch (error) {
+    if (getApiErrorCode(error) === "TUITION_CHANGED") {
+      throw new TuitionChangedError();
+    }
+    throw error;
+  }
+  // Lưới dự phòng nếu backend chưa hỗ trợ tham số tuitionId.
   if (data.tuitionId !== input.expectedTuitionId) {
     throw new TuitionChangedError();
   }

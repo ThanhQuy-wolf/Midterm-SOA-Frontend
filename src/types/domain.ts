@@ -41,11 +41,13 @@ export type TransactionFailureReason =
   | "SYSTEM_ERROR"
   | "INSUFFICIENT_BALANCE";
 
-// Field `code` trong body lỗi của payment-service.
+// Field `code` trong body lỗi của payment-service. TUITION_CHANGED: khoản học phí
+// backend sẽ thu khác khoản client gửi lên lúc initiate.
 export type ApiErrorCode =
   | "TUITION_NOT_FOUND"
   | "TUITION_ALREADY_PAID"
   | "TUITION_LOCKED"
+  | "TUITION_CHANGED"
   | "INSUFFICIENT_BALANCE"
   | "OTP_INVALID"
   | "OTP_REQUEST_LIMIT"
