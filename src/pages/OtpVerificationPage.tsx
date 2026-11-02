@@ -18,7 +18,7 @@ interface OtpLocationState {
 }
 
 const FAIL_MSG_OTP_EXPIRED =
-  "Mã OTP đã hết hiệu lực sau 5 phút. Giao dịch không được thực hiện, số dư giữ tạm đã được giải phóng.";
+  "Mã OTP đã hết hiệu lực sau 5 phút. Giao dịch không được thực hiện, số dư của bạn không bị trừ.";
 
 function formatCountdown(msLeft: number): string {
   const secs = Math.max(0, Math.ceil(msLeft / 1000));
@@ -125,7 +125,8 @@ export function OtpVerificationPage() {
   function handleCancel() {
     const t = transaction;
     if (!t) return;
-    // Không có endpoint hủy — backend tự giải phóng số dư giữ tạm theo TTL 5 phút của OTP.
+    // Không có endpoint hủy và backend không giữ tạm số dư — giao dịch PENDING bỏ dở được
+    // job nền chuyển FAILED khi OTP hết hạn.
     if (t.status === "OTP_SENT") {
       finalize({ ...t, status: "CANCELLED" });
     }

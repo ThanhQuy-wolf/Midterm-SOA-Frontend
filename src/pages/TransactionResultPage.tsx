@@ -13,10 +13,10 @@ interface ResultLocationState {
 
 const FAIL_MSG: Record<TransactionFailureReason, string> = {
   OTP_EXPIRED:
-    "Mã OTP đã hết hiệu lực sau 5 phút. Giao dịch không được thực hiện, số dư giữ tạm đã được giải phóng.",
+    "Mã OTP đã hết hiệu lực sau 5 phút. Giao dịch không được thực hiện, số dư của bạn không bị trừ.",
   OTP_LOCKED: "Bạn đã nhập sai quá số lần cho phép, vui lòng thực hiện lại giao dịch.",
   TUITION_ALREADY_PAID:
-    "Khoản học phí này vừa được thanh toán bởi một giao dịch khác. Giao dịch của bạn không được ghi nhận và số dư giữ tạm đã được hoàn lại.",
+    "Khoản học phí này vừa được thanh toán bởi một giao dịch khác. Giao dịch của bạn không được ghi nhận và số dư của bạn không bị trừ.",
   INSUFFICIENT_BALANCE: "Số dư không đủ để hoàn tất giao dịch.",
   SYSTEM_ERROR: "Lỗi hệ thống, giao dịch không được thực hiện. Vui lòng thử lại sau.",
 };

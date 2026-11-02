@@ -410,7 +410,7 @@ export function PaymentPage() {
 
           <p className="slip__note">
             <IconWallet size={15} />
-            Số dư khả dụng là số dư thực trừ phần đang giữ tạm cho các giao dịch chưa xác thực.
+            Số dư chỉ bị trừ khi bạn xác thực OTP thành công.
           </p>
         </aside>
       </div>
