@@ -191,8 +191,8 @@ export function OtpVerificationPage() {
         <div className="notice">
           <IconMail size={19} />
           <div>
-            Mã OTP đã gửi tới <span className="fig">{transaction.maskedEmail}</span>. Mã có hiệu lực trong
-            5 phút.
+            Mã OTP đã gửi tới <span className="fig">{transaction.maskedEmail}</span>. Mã hết hiệu lực khi
+            đồng hồ về 0:00.
           </div>
         </div>
 

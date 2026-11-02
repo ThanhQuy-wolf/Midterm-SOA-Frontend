@@ -18,6 +18,9 @@ interface InitiateApiResponse {
   semester: string;
   amount: number;
   balance: number;
+  // Hạn thật của OTP. Gọi lại initiate khi OTP cũ còn hạn sẽ nhận lại đúng giao dịch
+  // cũ với hạn cũ, nên không được tự cộng 5 phút từ lúc nhận response.
+  otpExpiresAt?: string;
 }
 
 // Khoản được ghi nợ khác khoản người dùng vừa xem trên phiếu thu. Xảy ra khi giữa
@@ -41,9 +44,9 @@ function storedPayerEmail(): string {
   }
 }
 
-// SCR-02 -> SCR-03. Backend chỉ trả { transactionId, amount, balance } nên phần còn lại
-// của Transaction dựng tại đây: studentName lấy từ kết quả tra cứu, hạn OTP là 5 phút kể
-// từ bây giờ. attemptsLeft để trống cho tới lần nhập sai đầu tiên.
+// SCR-02 -> SCR-03. Backend không trả tên sinh viên nên phần còn lại của Transaction dựng
+// tại đây: studentName lấy từ kết quả tra cứu, hạn OTP lấy từ otpExpiresAt (dự phòng 5 phút
+// nếu thiếu). attemptsLeft để trống cho tới lần nhập sai đầu tiên.
 // Ném 429 kèm retryAfterSeconds khi vượt hạn mức gửi OTP theo giờ.
 export async function initiateTransaction(input: {
   studentId: string;
@@ -71,7 +74,7 @@ export async function initiateTransaction(input: {
     status: "OTP_SENT",
     createdAt: new Date(now).toISOString(),
     maskedEmail: email ? maskEmail(email) : undefined,
-    otpExpiresAt: new Date(now + OTP_TTL_MS).toISOString(),
+    otpExpiresAt: data.otpExpiresAt ?? new Date(now + OTP_TTL_MS).toISOString(),
   };
 }
 
