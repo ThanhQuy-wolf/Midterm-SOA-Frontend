@@ -1,12 +1,12 @@
 import {
   apiClient,
-  getApiErrorMessage,
+  getApiErrorCode,
   getApiErrorRemainingAttempts,
   getApiErrorRetryAfterSeconds,
   getApiErrorStatus,
 } from "./client";
 import { maskEmail } from "../utils/format";
-import type { Payer, Transaction, TransactionFailureReason } from "../types/domain";
+import type { ApiErrorCode, Payer, Transaction, TransactionFailureReason } from "../types/domain";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
 // Cố tình không có MAX_OTP_ATTEMPTS ở đây: giới hạn số lần thử là luật chống
@@ -78,63 +78,26 @@ export async function initiateTransaction(input: {
   };
 }
 
-function classifyVerifyError(error: unknown): {
-  failureReason?: TransactionFailureReason;
-  locked: boolean;
-  expired: boolean;
-} {
-  const status = getApiErrorStatus(error);
-  const message = (getApiErrorMessage(error) ?? "").toLowerCase();
-
-  // Backend gộp nhiều ca vào cùng InsufficientBalanceException nên mã 409 một mình
-  // không đủ để kết luận. Trong các lỗi 409 của verify-otp, chỉ "OTP không hợp lệ"
-  // là còn thử lại được; số còn lại đều là saga đã hoàn tiền và ghi giao dịch thành
-  // FAILED, cho gõ tiếp là vô nghĩa.
-
-  // Hai ca 429 và sai OTP đã được verifyOtp bắt bằng mã HTTP và remainingAttempts,
-  // phần dưới đây chỉ là lưới dự phòng dò theo chuỗi.
-  if (/quá nhiều lần|quá số lần|too many|maximum/.test(message)) {
-    return { failureReason: "OTP_LOCKED", locked: true, expired: false };
-  }
-  // Giao dịch không tồn tại (404) hoặc không thuộc người đang đăng nhập (403).
-  if (status === 404 || status === 403) {
-    return { failureReason: "SYSTEM_ERROR", locked: true, expired: false };
-  }
-
-  // Backend cố tình gộp "sai" và "hết hạn" vào một câu để không lộ thông tin, nên
-  // luật này phải đứng trước luật "hết hạn" bên dưới — không thì chính chữ "hết hạn"
-  // trong câu bị hiểu nhầm. Hết hạn thật thì đồng hồ đếm ngược phía client đã bắt.
-  if (/otp không hợp lệ|otp không đúng|invalid otp/.test(message)) {
-    return { locked: false, expired: false };
-  }
-
-  if (/hết hạn|hết hiệu lực|expired/.test(message)) {
-    return { failureReason: "OTP_EXPIRED", locked: false, expired: true };
-  }
-  // Khớp "Học phí đã được người khác thanh toán" và "Khoản học phí này đã được đóng",
-  // vốn có chữ chen vào giữa. Buộc chủ ngữ là học phí để không nuốt nhầm câu
-  // "Thanh toán thất bại".
-  if (/(học phí|khoản).{0,40}(thanh toán|đóng)|already paid/.test(message)) {
-    return { failureReason: "TUITION_ALREADY_PAID", locked: true, expired: false };
-  }
-  if (/số dư không đủ|insufficient/.test(message)) {
-    return { failureReason: "INSUFFICIENT_BALANCE", locked: true, expired: false };
-  }
-  // Lưới an toàn: 409 nào chưa nhận dạng được cũng là giao dịch đã chết hẳn
-  // (lỗi cấu hình, không tìm thấy tài khoản/khoản học phí, saga thất bại…).
-  if (status === 409 || /không tồn tại|not found|không thuộc/.test(message)) {
-    return { failureReason: "SYSTEM_ERROR", locked: true, expired: false };
-  }
-  // Mặc định: OTP sai bình thường.
-  return { locked: false, expired: false };
-}
+// Mã lỗi backend -> lý do thất bại hiển thị ở SCR-04. Mọi mã trong bảng này đều nghĩa
+// là giao dịch đã chốt FAILED phía backend (saga đã hoàn tiền nếu từng trừ), nên không
+// cho nhập OTP tiếp. Riêng sai OTP (OTP_INVALID) đi qua remainingAttempts ở dưới.
+const FAILURE_BY_CODE: Partial<Record<ApiErrorCode, TransactionFailureReason>> = {
+  TUITION_ALREADY_PAID: "TUITION_ALREADY_PAID",
+  INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE",
+  OTP_ATTEMPT_LIMIT: "OTP_LOCKED",
+  TRANSACTION_FAILED: "SYSTEM_ERROR",
+  PAYMENT_FAILED: "SYSTEM_ERROR",
+  TRANSACTION_NOT_FOUND: "SYSTEM_ERROR",
+  TRANSACTION_FORBIDDEN: "SYSTEM_ERROR",
+};
 
 // SCR-03: xác thực OTP. Trạng thái được suy ra từ kết quả gọi API:
 //  - thành công         -> COMPLETED
 //  - 429                -> FAILED (OTP_LOCKED) + retryAfterSeconds; giao dịch chết hẳn
 //  - 409 + remainingAttempts -> OTP_SENT, attemptsLeft = con số backend trả về
-//  - OTP hết hạn         -> EXPIRED (OTP_EXPIRED)
-//  - học phí đã đóng     -> FAILED (TUITION_ALREADY_PAID)
+//  - lỗi có code         -> FAILED với lý do theo FAILURE_BY_CODE
+// Hết hạn OTP không có mã riêng (backend cố ý gộp với "sai OTP" để không lộ thông tin);
+// đồng hồ đếm ngược phía client bắt ca này.
 export async function verifyOtp(transaction: Transaction, otp: string): Promise<Transaction> {
   try {
     await apiClient.post("/payments/verify-otp", {
@@ -173,22 +136,17 @@ export async function verifyOtp(transaction: Transaction, otp: string): Promise<
       return { ...transaction, status: "OTP_SENT", attemptsLeft: remainingAttempts };
     }
 
-    const { failureReason, locked, expired } = classifyVerifyError(error);
-
-    if (expired) {
-      return { ...transaction, status: "EXPIRED", failureReason: "OTP_EXPIRED", attemptsLeft: 0 };
+    const code = getApiErrorCode(error);
+    const failureReason = code ? FAILURE_BY_CODE[code] : undefined;
+    if (failureReason) {
+      return { ...transaction, status: "FAILED", failureReason, attemptsLeft: 0 };
     }
-    if (locked) {
-      return {
-        ...transaction,
-        status: "FAILED",
-        failureReason: failureReason ?? "OTP_LOCKED",
-        attemptsLeft: 0,
-      };
+    // Không có mã nhận dạng được: 403/404/409 vẫn là giao dịch không dùng tiếp được.
+    if (status === 403 || status === 404 || status === 409) {
+      return { ...transaction, status: "FAILED", failureReason: "SYSTEM_ERROR", attemptsLeft: 0 };
     }
 
-    // Dự phòng: backend lẽ ra luôn kèm remainingAttempts cho ca sai OTP. Nếu
-    // thiếu, giữ nguyên trạng thái và để người dùng thử lại thay vì đoán số lần.
+    // Còn lại là 400 (OTP sai định dạng): giữ nguyên để người dùng nhập lại.
     return { ...transaction, status: "OTP_SENT" };
   }
 }

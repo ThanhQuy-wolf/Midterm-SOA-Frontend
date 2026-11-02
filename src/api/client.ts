@@ -1,4 +1,5 @@
 import axios, { isAxiosError } from "axios";
+import type { ApiErrorCode } from "../types/domain";
 
 // Mọi request đi qua API Gateway ở cổng 8080 (không gọi thẳng auth/tuition/payment service).
 // Xem docs/API-FRONTEND.md.
@@ -48,6 +49,30 @@ export function getApiErrorMessage(error: unknown): string | undefined {
 
 export function getApiErrorStatus(error: unknown): number | undefined {
   return isAxiosError(error) ? error.response?.status : undefined;
+}
+
+// Mã lỗi ổn định payment-service trả kèm message (xem docs/API-FRONTEND.md). Dùng mã
+// này để phân biệt các ca lỗi thay vì dò câu chữ tiếng Việt.
+const API_ERROR_CODES: readonly ApiErrorCode[] = [
+  "TUITION_NOT_FOUND",
+  "TUITION_ALREADY_PAID",
+  "TUITION_LOCKED",
+  "INSUFFICIENT_BALANCE",
+  "OTP_INVALID",
+  "OTP_REQUEST_LIMIT",
+  "OTP_ATTEMPT_LIMIT",
+  "TRANSACTION_FAILED",
+  "TRANSACTION_NOT_FOUND",
+  "TRANSACTION_FORBIDDEN",
+  "PAYMENT_FAILED",
+  "SERVICE_BUSY",
+  "INTERNAL_ERROR",
+];
+
+export function getApiErrorCode(error: unknown): ApiErrorCode | undefined {
+  if (!isAxiosError(error)) return undefined;
+  const raw = (error.response?.data as { code?: unknown } | undefined)?.code;
+  return API_ERROR_CODES.find((c) => c === raw);
 }
 
 // Hai loại lỗi trong luồng OTP có kèm số liệu (xem docs/API-FRONTEND.md):

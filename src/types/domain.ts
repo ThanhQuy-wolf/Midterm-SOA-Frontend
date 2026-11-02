@@ -41,6 +41,22 @@ export type TransactionFailureReason =
   | "SYSTEM_ERROR"
   | "INSUFFICIENT_BALANCE";
 
+// Field `code` trong body lỗi của payment-service.
+export type ApiErrorCode =
+  | "TUITION_NOT_FOUND"
+  | "TUITION_ALREADY_PAID"
+  | "TUITION_LOCKED"
+  | "INSUFFICIENT_BALANCE"
+  | "OTP_INVALID"
+  | "OTP_REQUEST_LIMIT"
+  | "OTP_ATTEMPT_LIMIT"
+  | "TRANSACTION_FAILED"
+  | "TRANSACTION_NOT_FOUND"
+  | "TRANSACTION_FORBIDDEN"
+  | "PAYMENT_FAILED"
+  | "SERVICE_BUSY"
+  | "INTERNAL_ERROR";
+
 export interface Transaction {
   transactionId: string;
   studentId: string;
